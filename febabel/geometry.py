@@ -32,9 +32,10 @@ class Node(object):
     # So a Node object can be treated like a list.
     def __iter__(self):
         return iter(self._pos)
-
     def __getitem__(self, i):
         return self._pos[i]
+    def __setitem__(self, i, value):
+        self._pos[i] = value
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self._pos))
