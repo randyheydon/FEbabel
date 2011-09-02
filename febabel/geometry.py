@@ -8,28 +8,28 @@ class Node(object):
         pos must be an iterable of length 3."""
         self._pos = list(pos)[0:3]
 
-    @property
-    def x(self):
+
+    # Special properties getters/setters.
+    def _getx(self):
         return self._pos[0]
-    @x.setter
-    def x(self, value):
+    def _setx(self, value):
         self._pos[0] = value
+    x = property(_getx, _setx)
 
-    @property
-    def y(self):
+    def _gety(self):
         return self._pos[1]
-    @y.setter
-    def y(self, value):
+    def _sety(self, value):
         self._pos[1] = value
+    y = property(_gety, _sety)
 
-    @property
-    def z(self):
+    def _getz(self):
         return self._pos[2]
-    @z.setter
-    def z(self, value):
+    def _setz(self, value):
         self._pos[2] = value
+    z = property(_getz, _setz)
 
 
+    # So a Node object can be treated like a list.
     def __iter__(self):
         return iter(self._pos)
 
