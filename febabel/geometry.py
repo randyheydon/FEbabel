@@ -9,7 +9,7 @@ class Node(Constrainable):
     __slots__ = ['_pos']
 
 
-    def __init__(self, pos):
+    def __init__(self, pos, **kwargs):
         """Create a node at the given position.
         pos must be an iterable of length 3.
         NOTE: This will not protect you from yourself!  Insert *only* valid
@@ -17,6 +17,7 @@ class Node(Constrainable):
         undefined!"""
         p = iter(pos)
         self._pos = [p.next(), p.next(), p.next()]
+        super(Node, self).__init__(**kwargs)
 
 
     # Special properties getters/setters.
@@ -58,11 +59,12 @@ class Node(Constrainable):
 class Element(object):
     "Base class for all different element types."
 
-    def __init__(self, nodes, material=None):
+    def __init__(self, nodes, material=None, **kwargs):
         """nodes is an iterable of Node objects.
         material is a Material object, or None."""
         self._nodes = list(nodes)
         self._material = material
+        super(Element, self).__init__(**kwargs)
 
 
 class Tet4(Element):
