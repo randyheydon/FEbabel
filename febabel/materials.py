@@ -13,4 +13,7 @@ class Porous(Material):
     def __init__(self, porosity, base):
         pass
 
-class Rigid(Material, Constrainable): pass
+class Rigid(Material, Constrainable):
+    def __init__(self, COM=None):
+        Material.__init__(self)
+        Constrainable.__init__(self)
