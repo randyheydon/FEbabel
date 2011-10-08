@@ -1,4 +1,6 @@
-class Node(object):
+from .constraints import Constrainable
+
+class Node(Constrainable):
     """A single point in three-dimensional Cartesian space.
     The node coordinates can be accessed and set through properties x,y,z.
     Similarly, coordinates can be indexed and iterated over like a list."""
@@ -13,7 +15,8 @@ class Node(object):
         NOTE: This will not protect you from yourself!  Insert *only* valid
         data (length 3 sequence of ints/floats), or the result will be
         undefined!"""
-        self._pos = list(pos)[0:3]
+        p = iter(pos)
+        self._pos = [p.next(), p.next(), p.next()]
 
 
     # Special properties getters/setters.
@@ -63,8 +66,15 @@ class Element(object):
 
 
 class Tet4(Element):
-    "4-node linear tetrahedral element"
+    "4-node linear tetrahedral element."
+class Pent6(Element):
+    "6-node linear pentahedral (triangular prism) element."
 class Hex8(Element):
-    "8-node linear hexahedral (brick) element"
+    "8-node linear hexahedral (brick) element."
+# TODO: Shells need thickness.
+class Shell3(Element):
+    "3-node triangular shell element."
 class Shell4(Element):
-    "4-node shell element"
+    "4-node quadrilateral shell element."
+class Spring(Element):
+    "2-node tension-only element."
