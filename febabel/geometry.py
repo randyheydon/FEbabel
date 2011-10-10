@@ -57,25 +57,52 @@ class Node(Constrainable):
 
 
 class Element(object):
-    "Base class for all different element types."
+    """Base class for all different element types.
+    Note that subclasses should define n_nodes, the number of nodes required by
+    the particular element."""
 
     def __init__(self, nodes, material=None):
         """nodes is an iterable of Node objects.
-        material is a Material object, or None."""
-        self._nodes = list(nodes)
-        self._material = material
+        material is a Material object, or None.
+        NOTE: This will not protect you from yourself!  Insert *only* valid
+        data (a correct-length sequence of nodes), or the result will be
+        undefined!"""
+        n = iter(nodes)
+        self._nodes = [ n.next() for i in xrange(self.n_nodes) ]
+        self.material = material
+
+    # So an Element object can be treated like a list.
+    def __iter__(self):
+        return iter(self._nodes)
+    def __getitem__(self, i):
+        return self._nodes[i]
+    def __setitem__(self, i, node):
+        self._nodes[i] = node
+    def __len__(self):
+        # Could return len(self._pos), but it will always be 3...
+        return self.n_nodes
+
+    def __repr__(self):
+        return "%s(%s, %s)" % ( self.__class__.__name__, repr(self._nodes),
+            repr(self.material) )
 
 
 class Tet4(Element):
     "4-node linear tetrahedral element."
+    n_nodes = 4
 class Pent6(Element):
     "6-node linear pentahedral (triangular prism) element."
+    n_nodes = 6
 class Hex8(Element):
     "8-node linear hexahedral (brick) element."
+    n_nodes = 8
 # TODO: Shells need thickness.
 class Shell3(Element):
     "3-node triangular shell element."
+    n_nodes = 3
 class Shell4(Element):
     "4-node quadrilateral shell element."
+    n_nodes = 4
 class Spring(Element):
     "2-node tension-only element."
+    n_nodes = 2

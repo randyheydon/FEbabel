@@ -23,8 +23,7 @@ def write(self, file_name_or_obj):
     e_geometry = etree.SubElement(e_root, 'Geometry')
     nodes = set()
     for e in self.elements:
-        nodes.update(e.get_nodes())
-        # TODO: Work out the actual element API.
+        nodes.update(iter(e))
     nodelist = list(nodes)
 
     e_nodes = etree.SubElement(e_geometry, 'Nodes')
@@ -37,9 +36,8 @@ def write(self, file_name_or_obj):
         e_elem = etree.SubElement(e_elements, 'AN ELEMENT',
             {id:str(i+1), 'mat':'A MATERIAL'})
         # TODO: Mapping between internal and FEBio element types.
-        # TODO: Materials listing (and element API for viewing it).
+        # TODO: Materials listing.
         e_elem.text = ','.join( str(nodelist.index(n)+1)
-            for n in e.get_nodes() )
-        # TODO: Work out the actual element API.
+            for n in iter(e) )
 
     etree.ElementTree(root).write(file_name_or_obj)

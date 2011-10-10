@@ -5,7 +5,7 @@ import sys; sys.path.append('..')
 from febabel import geometry as g
 
 
-class TestGeometry(unittest.TestCase):
+class TestNode(unittest.TestCase):
 
 
     def test_init(self):
