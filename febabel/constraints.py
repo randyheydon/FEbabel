@@ -1,10 +1,16 @@
 class Constrainable(object):
     "A mixin to allow different object types to accept constraints."
+
+    __slots__ = ['constraints']
+
     def __init__(self):
         self.constraints = list()
 
+
+
 class Switchable(object):
     "A mixin to allow an object to be activated at specific times."
+
 
 
 
@@ -14,6 +20,7 @@ class LoadCurve(object):
 # TODO: a few common loadcurves
 loadcurve_zero = LoadCurve()
 loadcurve_instant = LoadCurve()
+
 
 
 
