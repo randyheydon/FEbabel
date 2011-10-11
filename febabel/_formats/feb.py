@@ -3,6 +3,24 @@ Contains a method for writing an FEproblem to FEBio's .feb format.
 
 Supports .feb version 1.1.
 """
+from collections import defaultdict
+
+from .. import geometry as g
+
+# Map internal element types to the FEBio identifier to which they're written.
+# Spring and surface elements are handled differently, so not included.
+element_write_map = {
+    g.Tet4: 'tet4',
+    g.Pent6: 'pent6',
+    g.Hex8: 'hex8',
+    g.Shell3: 'tri3',
+    g.Shell4: 'quad4',
+}
+
+# Map for reading is generally the inverse of above, but can be modified
+# separately by users if they have made custom element types.
+#element_read_map = dict((v,k) for k,v in element_write_map.iteritems())
+#del element_read_map[None]
 
 
 def write(self, file_name_or_obj):
@@ -12,7 +30,7 @@ def write(self, file_name_or_obj):
     import xml.etree.ElementTree as etree
 
     e_root = etree.Element('febio_spec',
-        {'version': supported_writers['FEBio']})
+        {'version': '1.1'})
 
     e_control = etree.SubElement(e_root, 'Control')
     # TODO: Control stuff.
@@ -27,17 +45,18 @@ def write(self, file_name_or_obj):
     nodelist = list(nodes)
 
     e_nodes = etree.SubElement(e_geometry, 'Nodes')
-    for i,n in enumerate(nodelist):
-        e_node = etree.SubElement(e_nodes, 'node', {'id':str(i+1)})
+    for i,n in enumerate(nodelist, start=1):
+        e_node = etree.SubElement(e_nodes, 'node', {'id':str(i)})
         e_node.text = ','.join( map(str,iter(n)) )
 
     e_elements = etree.SubElement(e_geometry, 'Elements')
-    for i,e in enumerate(self.elements):
-        e_elem = etree.SubElement(e_elements, 'AN ELEMENT',
-            {id:str(i+1), 'mat':'A MATERIAL'})
-        # TODO: Mapping between internal and FEBio element types.
+    # Get list of only those elements that FEBio lists in the Elements section.
+    elements = [e for e in self.elements if type(e) in element_write_map]
+    for i,e in enumerate(elements, start=1):
+        e_elem = etree.SubElement(e_elements, element_write_map[type(e)],
+            {'id':str(i), 'mat':'A MATERIAL'})
         # TODO: Materials listing.
         e_elem.text = ','.join( str(nodelist.index(n)+1)
             for n in iter(e) )
 
-    etree.ElementTree(root).write(file_name_or_obj)
+    etree.ElementTree(e_root).write(file_name_or_obj)
