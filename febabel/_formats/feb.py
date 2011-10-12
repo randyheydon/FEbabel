@@ -3,7 +3,6 @@ Contains a method for writing an FEproblem to FEBio's .feb format.
 
 Supports .feb version 1.1.
 """
-from collections import defaultdict
 
 from .. import geometry as g
 
@@ -39,13 +38,10 @@ def write(self, file_name_or_obj):
     # TODO: Material stuff.
 
     e_geometry = etree.SubElement(e_root, 'Geometry')
-    nodes = set()
-    for e in self.elements:
-        nodes.update(iter(e))
-    nodelist = list(nodes)
+    nodes = list(self.get_nodes())
 
     e_nodes = etree.SubElement(e_geometry, 'Nodes')
-    for i,n in enumerate(nodelist, start=1):
+    for i,n in enumerate(nodes, start=1):
         e_node = etree.SubElement(e_nodes, 'node', {'id':str(i)})
         e_node.text = ','.join( map(str,iter(n)) )
 
@@ -56,7 +52,7 @@ def write(self, file_name_or_obj):
         e_elem = etree.SubElement(e_elements, element_write_map[type(e)],
             {'id':str(i), 'mat':'A MATERIAL'})
         # TODO: Materials listing.
-        e_elem.text = ','.join( str(nodelist.index(n)+1)
+        e_elem.text = ','.join( str(nodes.index(n)+1)
             for n in iter(e) )
 
     etree.ElementTree(e_root).write(file_name_or_obj)
