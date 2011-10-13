@@ -41,16 +41,16 @@ def write(self, file_name_or_obj):
     nodes = list(self.get_nodes())
 
     e_nodes = etree.SubElement(e_geometry, 'Nodes')
-    for i,n in enumerate(nodes, start=1):
-        e_node = etree.SubElement(e_nodes, 'node', {'id':str(i)})
+    for i,n in enumerate(nodes):
+        e_node = etree.SubElement(e_nodes, 'node', {'id':str(i+1)})
         e_node.text = ','.join( map(str,iter(n)) )
 
     e_elements = etree.SubElement(e_geometry, 'Elements')
     # Get list of only those elements that FEBio lists in the Elements section.
     elements = [e for e in self.elements if type(e) in element_write_map]
-    for i,e in enumerate(elements, start=1):
+    for i,e in enumerate(elements):
         e_elem = etree.SubElement(e_elements, element_write_map[type(e)],
-            {'id':str(i), 'mat':'A MATERIAL'})
+            {'id':str(i+1), 'mat':'A MATERIAL'})
         # TODO: Materials listing.
         e_elem.text = ','.join( str(nodes.index(n)+1)
             for n in iter(e) )
