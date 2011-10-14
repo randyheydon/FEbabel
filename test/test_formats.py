@@ -1,4 +1,6 @@
 #!/usr/bin/env python2
+from __future__ import with_statement
+
 import unittest, xml.etree.ElementTree as etree
 try: from cStringIO import StringIO
 except: from StringIO import StringIO
@@ -36,8 +38,21 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(len(elements), 2)
         self.assertEqual([e.get('id') for e in elements], ['1','2'])
         # The two elements share four nodes (but element order can't be assured).
-        self.assertTrue(elements[0].text[8:15] == elements[1].text[0:7] or
-            elements[1].text[8:15] == elements[0].text[0:7])
+        e0 = elements[0].text.split(',')
+        e1 = elements[1].text.split(',')
+        self.assertTrue(e0[4:8] == e1[0:4] or e1[4:8] == e0[0:4])
+
+
+
+class TestInp(unittest.TestCase):
+
+
+    def test_reader(self):
+        p = f.problem.FEproblem()
+        with open(os.path.join(os.path.dirname(__file__), 'data', 'tf_joint.inp')) as inp:
+            p.read_inp(inp)
+        self.assertEqual(len(p.sets['tf_joint.inp']['nodes']), 96853)
+        self.assertEqual(len(p.sets['tf_joint.inp']['elements']), 81653)
 
 
 

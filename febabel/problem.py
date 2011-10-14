@@ -9,6 +9,7 @@ class FEproblem(object):
     def __init__(self):
         self.elements = set()
         self.options = dict()
+        self.sets = dict()
 
 
     def get_nodes(self):
