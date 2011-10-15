@@ -8,7 +8,7 @@ setup(
     long_description = open('README.rst').read(),
     author = 'Randy Heydon',
     author_email = 'randy.heydon@clockworklab.net',
-    packages = ['febabel'],
-    scripts = 'translateFE',
+    packages = ['febabel', 'febabel._formats'],
+    scripts = ['translateFE'],
     license = 'CC:BY-SA',
 )
