@@ -1,7 +1,11 @@
-#!/usr/bin/env python
-import unittest, os
+#!/usr/bin/env python2
+import unittest
 
-import sys; sys.path[0] = os.path.dirname(sys.path[0])
+import sys, os
+# For Python 3, use the translated version of the library.
+# For Python 2, find the library one directory up.
+if sys.version < '3':
+    sys.path.append(os.path.dirname(sys.path[0]))
 from febabel import geometry as g
 
 
@@ -41,7 +45,7 @@ class TestElements(unittest.TestCase):
 
     def setUp(self):
         self.nodes = [g.Node(map(float,(i,j,k)))
-            for i in xrange(3) for j in xrange(3) for k in xrange(3)]
+            for i in range(3) for j in range(3) for k in range(3)]
 
 
     def test_init(self):
@@ -51,7 +55,7 @@ class TestElements(unittest.TestCase):
 
     def test_getters(self):
         a = g.Tet4(self.nodes[0:4])
-        for n in xrange(4):
+        for n in range(4):
             self.assertEqual(a[n], self.nodes[n])
         for i,j in zip(a, self.nodes):
             self.assertEqual(i, j)

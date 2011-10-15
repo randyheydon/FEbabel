@@ -2,10 +2,17 @@
 from __future__ import with_statement
 
 import unittest, xml.etree.ElementTree as etree
-try: from cStringIO import StringIO
-except: from StringIO import StringIO
 
-import sys, os; sys.path[0] = os.path.dirname(sys.path[0])
+import sys, os
+# For Python 3, use the translated version of the library.
+# For Python 2, find the library one directory up.
+if sys.version > '3':
+    from io import StringIO
+else:
+    try: from cStringIO import StringIO
+    except: from StringIO import StringIO
+    sys.path.append(os.path.dirname(sys.path[0]))
+
 import febabel as f
 
 
@@ -32,7 +39,8 @@ class TestFeb(unittest.TestCase):
         nodes = tree.find('Geometry').find('Nodes').findall('node')
         self.assertEqual(len(nodes), 12)
         # All nodes are properly numbered.
-        self.assertEqual([n.get('id') for n in nodes], map(str, range(1,13)))
+        self.assertEqual([n.get('id') for n in nodes],
+            [str(i) for i in range(1,13)])
 
         elements = tree.find('Geometry').find('Elements').findall('hex8')
         self.assertEqual(len(elements), 2)
