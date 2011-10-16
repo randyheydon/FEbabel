@@ -7,7 +7,7 @@ import sys, os
 # For Python 3, use the translated version of the library.
 # For Python 2, find the library one directory up.
 if sys.version > '3':
-    from io import StringIO
+    from io import BytesIO as StringIO
 else:
     try: from cStringIO import StringIO
     except: from StringIO import StringIO
