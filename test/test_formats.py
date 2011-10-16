@@ -61,6 +61,17 @@ class TestInp(unittest.TestCase):
             p.read_inp(inp)
         self.assertEqual(len(p.sets['tf_joint.inp']['nodes']), 96853)
         self.assertEqual(len(p.sets['tf_joint.inp']['elements']), 81653)
+        self.assertEqual( p.sets['tf_joint.inp']['f2fem'][0],
+            p.sets['tf_joint.inp']['nodes']['25225'] )
+        self.assertEqual( p.sets['tf_joint.inp']['acl'][3],
+            p.sets['tf_joint.inp']['elements']['52864'] )
+        for xset in ('f2fem', 'tc2tib', 'tiblig', 'femlig', 'lmant', 'lmpost',
+            'mmant', 'mmpost', 'femur', 'tibia', 'fcart', 'fcartr', 'fcartb',
+            'fcartm', 'fcartt', 'tcart', 'tcartb', 'tcartm', 'tcartt', 'mcl',
+            'amc', 'mmc', 'pmc', 'lcl', 'alc', 'mlc', 'plc', 'lat meni',
+            'med meni', 'pcl', 'apc', 'ppc', 'acl', 'aclfiber', 'aac', 'pac'):
+            self.assertTrue( xset in p.sets['tf_joint.inp'].keys(),
+                msg='Set %s not found' % xset )
 
 
 

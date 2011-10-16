@@ -57,6 +57,22 @@ def read(self, fileobj, name=None):
                 elemlist[v[0]] = etype( nodelist[i] for i in v[1:] )
                 l = fileobj.readline()
 
+        elif l.startswith('*NSET,NSET=') or l.startswith('*ELSET,ELSET='):
+            # FIXME: Check that xset_name is not 'nodes' or 'elements', used
+            # above.  Or use some different method above.
+            xset_name = l.strip().split('=',1)[1]
+            group = 'nodes' if l.startswith('*NSET') else 'elements'
+
+            l = fileobj.readline()
+            lines = list()
+            while not (l.startswith('*') or l==''):
+                lines.append(l.strip())
+                l = fileobj.readline()
+
+            self.sets[name][xset_name] = [ self.sets[name][group][i] for i in
+                ''.join(lines).split(',') ]
+
         else:
-            warn('Unrecognized section "%s".  Skipping remainder of file.' % l.strip())
+            warn('Unrecognized section "%s".  Skipping remainder of file.'
+                % l.strip())
             break
