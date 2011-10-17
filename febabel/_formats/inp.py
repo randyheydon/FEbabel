@@ -30,38 +30,35 @@ def read(self, fileobj, name=None):
     while l != '':
 
         if l.startswith('*NODE'):
-            # Parse node coordinates and append to nodelist.
-            nodelist = dict()
-            self.sets[name]['nodes'] = nodelist
+            # Parse node coordinates.  Each is wrapped in a list and added to
+            # the file's set dictionary, using 'node%s' as its key (where %s is
+            # its node ID number).
+            storage = self.sets[name]
 
             l = fileobj.readline()
             while not (l.startswith('*') or l==''):
                 v = l.split(',')
-                nodelist[v[0]] = g.Node( map(float, v[1:4]) )
+                storage['node%s' % v[0]] = set([g.Node( map(float, v[1:4]) )])
                 l = fileobj.readline()
 
         elif l.startswith('*ELEMENT,TYPE='):
             # Parse element.  Determine its type and node numbers.
             # TODO: Can shell element thickness be read from .inp files?
-            if not 'elements' in self.sets[name]:
-                elemlist = dict()
-                self.sets[name]['elements'] = elemlist
-            else:
-                elemlist = self.sets[name]['elements']
-            nodelist = self.sets[name]['nodes']
+            storage = self.sets[name]
 
             etype = element_read_map[ l.strip().split('=')[1] ]
             l = fileobj.readline()
             while not (l.startswith('*') or l==''):
                 v = l.strip().split(',')
-                elemlist[v[0]] = etype( nodelist[i] for i in v[1:] )
+                storage['element%s' % v[0]] = set(
+                    etype( iter(storage['node%s' % i]).next() for i in v[1:] ) )
                 l = fileobj.readline()
 
         elif l.startswith('*NSET,NSET=') or l.startswith('*ELSET,ELSET='):
             # FIXME: Check that xset_name is not 'nodes' or 'elements', used
             # above.  Or use some different method above.
             xset_name = l.strip().split('=',1)[1]
-            group = 'nodes' if l.startswith('*NSET') else 'elements'
+            group = 'node%s' if l.startswith('*NSET') else 'element%s'
 
             l = fileobj.readline()
             lines = list()
@@ -69,8 +66,11 @@ def read(self, fileobj, name=None):
                 lines.append(l.strip())
                 l = fileobj.readline()
 
-            self.sets[name][xset_name] = [ self.sets[name][group][i] for i in
-                ''.join(lines).split(',') ]
+            self.sets[name][xset_name] = set([ iter(self.sets[name][group%i]).next()
+                for i in ''.join(lines).split(',') ])
+
+        #elif l.startswith('*SURFACE,NAME='):
+        #    xset_name = l.strip().split('=',1)[1]
 
         else:
             warn('Unrecognized section "%s".  Skipping remainder of file.'

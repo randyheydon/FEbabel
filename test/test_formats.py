@@ -59,12 +59,21 @@ class TestInp(unittest.TestCase):
         p = f.problem.FEproblem()
         with open(os.path.join(os.path.dirname(__file__), 'data', 'tf_joint.inp')) as inp:
             p.read_inp(inp)
-        self.assertEqual(len(p.sets['tf_joint.inp']['nodes']), 96853)
-        self.assertEqual(len(p.sets['tf_joint.inp']['elements']), 81653)
-        self.assertEqual( p.sets['tf_joint.inp']['f2fem'][0],
-            p.sets['tf_joint.inp']['nodes']['25225'] )
-        self.assertEqual( p.sets['tf_joint.inp']['acl'][3],
-            p.sets['tf_joint.inp']['elements']['52864'] )
+        # Check all nodes and elements are accounted for.
+        self.assertEqual(len( [n for n in p.sets['tf_joint.inp'].keys()
+            if n.startswith('node')] ), 96853)
+        self.assertEqual(len( [e for e in p.sets['tf_joint.inp'].keys()
+            if e.startswith('element')] ), 81653)
+        # Check sets have found the correct nodes/elements.
+        self.assertTrue( list(p.sets['tf_joint.inp']['node25225'])[0] in
+            p.sets['tf_joint.inp']['f2fem'])
+        self.assertFalse( list(p.sets['tf_joint.inp']['node1032'])[0] in
+            p.sets['tf_joint.inp']['f2fem'])
+        self.assertTrue( list(p.sets['tf_joint.inp']['element52864'])[0] in
+            p.sets['tf_joint.inp']['acl'])
+        self.assertFalse( list(p.sets['tf_joint.inp']['element9433'])[0] in
+            p.sets['tf_joint.inp']['acl'])
+        # Check all sets are accounted for.
         for xset in ('f2fem', 'tc2tib', 'tiblig', 'femlig', 'lmant', 'lmpost',
             'mmant', 'mmpost', 'femur', 'tibia', 'fcart', 'fcartr', 'fcartb',
             'fcartm', 'fcartt', 'tcart', 'tcartb', 'tcartm', 'tcartt', 'mcl',
