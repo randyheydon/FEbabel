@@ -76,7 +76,11 @@ class TestInp(unittest.TestCase):
             'mmant', 'mmpost', 'femur', 'tibia', 'fcart', 'fcartr', 'fcartb',
             'fcartm', 'fcartt', 'tcart', 'tcartb', 'tcartm', 'tcartt', 'mcl',
             'amc', 'mmc', 'pmc', 'lcl', 'alc', 'mlc', 'plc', 'lat meni',
-            'med meni', 'pcl', 'apc', 'ppc', 'acl', 'aclfiber', 'aac', 'pac'):
+            'med meni', 'pcl', 'apc', 'ppc', 'acl', 'aclfiber', 'aac', 'pac',
+            'femmcl', 'femlcl', 'mcltib', 'lcltib', 'fcs', 'fcsr', 'fcsm',
+            'fcsl', 'tcs', 'tcsl', 'tcsm', 'mcls', 'mclsurf', 'lcls',
+            'lclsurf', 'lmtib', 'lmfem', 'lmfemr', 'lmtibr', 'mmtib', 'mmfem',
+            'mmfemr', 'mmtibr', 'pclsurf', 'aclsurf', ):
             self.assertTrue( 'tf_joint.inp:%s'%xset in p.sets,
                 msg='Set %s not found' % xset )
 

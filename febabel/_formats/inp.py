@@ -60,9 +60,8 @@ def read(self, fileobj, name=None):
                 l = fileobj.readline()
 
         elif l.startswith('*NSET,NSET=') or l.startswith('*ELSET,ELSET='):
-            # FIXME: Check that xset_name is not 'nodes' or 'elements', used
-            # above.  Or use some different method above.
-            xset_name = l.strip().split('=',1)[1]
+            # FIXME: Check that xset_name is not NSET or ESET.
+            xset_name = SETSEP.join((name, l.strip().split('=',1)[1]))
             group = SETSEP.join((name, NSET if l.startswith('*NSET') else ESET))
 
             l = fileobj.readline()
@@ -71,8 +70,37 @@ def read(self, fileobj, name=None):
                 lines.append(l.strip())
                 l = fileobj.readline()
 
-            self.sets[SETSEP.join((name,xset_name))] = set( self.sets[group][i]
-                for i in ''.join(lines).split(',') )
+            self.sets[xset_name] = set( self.sets[group][i] for i in
+                ''.join(lines).split(',') )
+
+        elif l.startswith('*SURFACE,NAME='):
+            surflist = set()
+            self.sets[SETSEP.join((name, l.strip().split('=',1)[1]))] = surflist
+            elemlist = self.sets[SETSEP.join((name, ESET))]
+
+            l = fileobj.readline()
+            while not (l.startswith('*') or l==''):
+                element, side = l.strip().split(',')
+                e = elemlist[element]
+                if side == 'S1' or side == 'SPOS' or side == 'SNEG':
+                    face = [ e[0], e[3], e[2], e[1] ]
+                elif side == 'S2':
+                    face = [ e[4], e[5], e[6], e[7] ]
+                elif side == 'S3':
+                    face = [ e[0], e[1], e[5], e[4] ]
+                elif side == 'S4':
+                    face = [ e[1], e[2], e[6], e[5] ]
+                elif side == 'S5':
+                    face = [ e[2], e[3], e[7], e[6] ]
+                elif side == 'S6':
+                    face = [ e[0], e[4], e[7], e[3] ]
+                else:
+                    warn('Bad face identifier: %s' % side)
+                    continue
+                # TODO: Have it detect and reuse Surface elements?
+                surflist.add( g.Surface4(face) )
+                l = fileobj.readline()
+
 
         else:
             warn('Unrecognized section "%s".  Skipping remainder of file.'
