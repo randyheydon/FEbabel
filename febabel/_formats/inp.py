@@ -11,7 +11,7 @@ from ._common import ValsDict, SETSEP, NSET, ESET
 element_read_map = {
     'C3D8': g.Hex8,
     'S4': g.Shell4,
-    # TODO: inp supports more than these...
+    # TODO: Add support for tetrahedra, triangular shells, others needed?
 }
 
 
@@ -31,7 +31,9 @@ def read(self, fileobj, name=None):
     while l != '':
 
         if l.startswith('*NODE'):
-            # Parse node coordinates and append to nodelist.
+            # Parse node coordinates and add to file's default nodeset.
+            # Store nodes in a ValsDict so they can individually be accessed by
+            # the IDs given to them in the file.
             nodelist = ValsDict()
             self.sets[SETSEP.join((name,NSET))] = nodelist
 
@@ -42,8 +44,9 @@ def read(self, fileobj, name=None):
                 l = fileobj.readline()
 
         elif l.startswith('*ELEMENT,TYPE='):
-            # Parse element.  Determine its type and node numbers.
-            # TODO: Can shell element thickness be read from .inp files?
+            # Parse element.  Determine its type and nodes.
+            # Elements are defined in multiple sections, so don't overwrite the
+            # ValsDict if it already exists.
             eset_name = SETSEP.join((name,ESET))
             if eset_name in self.sets:
                 elemlist = self.sets[eset_name]
@@ -52,14 +55,18 @@ def read(self, fileobj, name=None):
                 self.sets[eset_name] = elemlist
             nodelist = self.sets[SETSEP.join((name,NSET))]
 
+            # TODO: Can shell element thickness be read from .inp files?
             etype = element_read_map[ l.strip().split('=')[1] ]
             l = fileobj.readline()
             while not (l.startswith('*') or l==''):
                 v = l.strip().split(',')
                 elemlist[v[0]] = etype( nodelist[i] for i in v[1:] )
                 l = fileobj.readline()
+            # Add these elements into the main problem's element set.
+            self.elements.update(elemlist)
 
         elif l.startswith('*NSET,NSET=') or l.startswith('*ELSET,ELSET='):
+            # Parse the named node and element sets.
             # FIXME: Check that xset_name is not NSET or ESET.
             xset_name = SETSEP.join((name, l.strip().split('=',1)[1]))
             group = SETSEP.join((name, NSET if l.startswith('*NSET') else ESET))
@@ -74,10 +81,16 @@ def read(self, fileobj, name=None):
                 ''.join(lines).split(',') )
 
         elif l.startswith('*SURFACE,NAME='):
+            # Parse surface set.
+            # Each surface element is defined by the element to which it's
+            # attached, and the specific face it covers.
+            # TODO: Support tetrahedra, triangular shells.
             surflist = set()
             self.sets[SETSEP.join((name, l.strip().split('=',1)[1]))] = surflist
             elemlist = self.sets[SETSEP.join((name, ESET))]
 
+            # Pick off the nodes covered by each surface element, then
+            # construct the surface element and add to the set.
             l = fileobj.readline()
             while not (l.startswith('*') or l==''):
                 element, side = l.strip().split(',')
@@ -100,6 +113,8 @@ def read(self, fileobj, name=None):
                 # TODO: Have it detect and reuse Surface elements?
                 surflist.add( g.Surface4(face) )
                 l = fileobj.readline()
+            # Add these elements into the main problem's element set.
+            self.elements.update(surflist)
 
 
         else:

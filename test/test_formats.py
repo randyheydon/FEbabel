@@ -62,6 +62,7 @@ class TestInp(unittest.TestCase):
         # Check all nodes and elements are accounted for.
         self.assertEqual(len(p.sets['tf_joint.inp:allnodes']), 96853)
         self.assertEqual(len(p.sets['tf_joint.inp:allelements']), 81653)
+        self.assertEqual(len(p.elements), 81653 + 35604)
         # Check sets have found the correct nodes/elements.
         self.assertTrue( p.sets['tf_joint.inp:allnodes']['25225'] in
             p.sets['tf_joint.inp:f2fem'])
