@@ -9,6 +9,14 @@ try: from cStringIO import StringIO
 except: from StringIO import StringIO
 from warnings import warn
 
+import sys
+if sys.version > '3':
+    cp_kwargs = {'strict':False}
+else:
+    cp_kwargs = {}
+
+
+from ._common import SETSEP, NSET, ESET
 
 SEPCHAR = ','
 SEPCHAR2 = ';'
@@ -22,6 +30,7 @@ INCL_KEY = '\nINCLUDE '
 
 def _accrue_cnfg(filename, visited=frozenset()):
     "Returns the text of the given file, with all INCLUDEs swapped in."
+    # FIXME: This would really be better if it just used cp.read on each file.
 
     # Check if this file has been seen already, which would indicate a loop.
     if filename in visited:
@@ -52,8 +61,39 @@ def _accrue_cnfg(filename, visited=frozenset()):
 
 def read(self, filename):
     """Read an Open Knee .cnfg file into the current problem."""
+    import numpy as np
 
     with open(os.path.join(os.path.dirname(filename), DEFAULTS)) as f:
         text = '\n'.join(( f.read(), _accrue_cnfg(filename) ))
-    cp = ConfigParser.SafeConfigParser()
+    cp = ConfigParser.SafeConfigParser(**cp_kwargs)
     cp.readfp(StringIO(text), filename=filename)
+
+
+    # Read in listed geometry source files.
+    geo_files = map(str.strip, cp.get('options', 'mesh').split(SEPCHAR))
+    for f in geo_files:
+        self.read(os.path.join(os.path.dirname(filename),f))
+
+    # If only one geometry file is specified, then its sets can be accessed
+    # in the config file directly by set name.  Otherwise, all sets must be
+    # accessed as "filename:setname".
+    # Note that str.startswith('') is always True.
+    geo_default = geo_files[0] if len(geo_files)==1 else ''
+
+
+    # Collect all nodes in the geometry source files.
+    nodeset = set()
+    for f in geo_files:
+        nodeset.update( self.sets[SETSEP.join((f, NSET))] )
+    nodeset = list(nodeset)
+    nodearray = np.array(nodeset).T
+
+    # TODO: Transform all nodes involved in this config.
+
+
+    # TODO: Something with solver settings.
+    # TODO: Generate loadcurves.
+    # TODO: Generate constraints and their switches, then apply to bodies.
+    # TODO: Generate materials, then apply to elements.
+    # TODO: Figure out contact.
+    # TODO: Generate springs.

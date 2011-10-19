@@ -1,0 +1,271 @@
+[options]
+# Set of general options.
+#model = default.feb # If unset, will be generated automatically from cnfg filename.
+mesh = tf_joint.inp
+scale = 1
+febio_spec = 1.1
+ABQsprings = 0
+t_only = 0
+lc = linear
+
+[solver]
+# Settings for the FEBio solver.  See the FEBio user manual for more information.
+#title = default # If unset, will be generated automatically from cnfg filename.
+time_steps = 25
+step_size = 0.1
+max_refs = 100
+max_ups = 0
+dtol = 0.01
+etol = 0.01
+rtol = 0.1
+lstol = 0.5
+pressure_stiffness = 0
+aggressiveness = 1
+dtmin = .001
+dtmax = lc="1"
+max_retries = 10
+opt_iter = 10
+plot_level = PLOT_MUST_POINTS
+analysis = dynamic
+
+[loadcurves]
+# Defined by sets of "time,value" pairs.  Each pair is separated from other pairs by a semicolon.  Each curve must be numbered sequentially.
+# TODO: How does FEBio must point controller work?  What should 1 default to?
+1 = 0,0;
+	.1,.1;
+	.2,.1;
+	.3,.1;
+	.4,.1;
+	.5,.1;
+	.6,.1;
+	.7,.1;
+	.8,.1;
+	.9,.1;
+	1,.1;
+	1.1,.1;
+	1.2,.1;
+	1.3,.1;
+	1.4,.1;
+	1.5,.1;
+	1.6,.1;
+	1.7,.1;
+	1.8,.1;
+	1.9,.1;
+	2,.1;
+	2.1,.1;
+	2.2,.1;
+	2.3,.1;
+	2.4,.1;
+	2.5,.1
+
+[step 1]
+# Set constraints on rigid bodies for each solution step.
+# rigid body = trans_x, trans_y, trans_z, rot_x, rot_y, rot_z
+# where each trans_* and rot_* can be one of "free", "fixed", "prescribed; [loadcurve]; [multiplier]", or "force; [loadcurve]; [multiplier]".  Each rigid body must be on a separate line.
+# Can have any amount of consecutively-numbered steps.  Put each in its own section, named in the form of "step n".  Make sure to specify constraints for all rigid bodies in each section; any body missed will be assumed to be entirely unconstrained.
+# TODO: Come up with a way to specify global constraints.
+
+# Materials.
+# For every every element set (eset) listed in sets, a material definition must be given.  Each material definition is in its own section, under the heading "material-[eset name]".  Only materials of type rigid, Mooney-Rivlin, Fung Orthotropic, and trans iso Mooney-Rivlin are supported.  See the FEBio user manual for information on these material models and the parameters they require.
+# NOTE: Apparently not every eset?  fcart and tcart aren't used.
+[material-femur]
+type=rigid
+density=1.132e-6
+COM=0,0,0
+
+[material-tibia]
+type=rigid
+density=1.132e-6
+COM=0,0,0
+
+[material-fcartb]
+type=Mooney-Rivlin
+density=1.5e-9
+c1=.856
+c2=0
+K=8
+[material-fcartm]
+type=Mooney-Rivlin
+density=1.5e-9
+c1=.856
+c2=0
+K=8
+[material-fcartt]
+type=Mooney-Rivlin
+density=1.5e-9
+c1=.856
+c2=0
+K=8
+[material-tcartb]
+type=Mooney-Rivlin
+density=1.5e-9
+c1=.856
+c2=0
+K=8
+[material-tcartm]
+type=Mooney-Rivlin
+density=1.5e-9
+c1=.856
+c2=0
+K=8
+[material-tcartt]
+type=Mooney-Rivlin
+density=1.5e-9
+c1=.856
+c2=0
+K=8
+
+[material-lat meni]
+type=Fung Orthotropic
+density=1.5e-9
+E1=125
+E2=27.5
+E3=27.5
+v12=.1
+v23=.33
+v31=.1
+G12=2
+G23=12.5
+G31=2
+c=1
+K=10
+axis1=7
+axis2=8
+axis3=3
+[material-med meni]
+type=Fung Orthotropic
+density=1.5e-9
+E1=125
+E2=27.5
+E3=27.5
+v12=.1
+v23=.33
+v31=.1
+G12=2
+G23=12.5
+G31=2
+c=1
+K=10
+axis1=7
+axis2=8
+axis3=3
+
+[material-acl]
+type=trans iso Mooney-Rivlin
+density=1.5e-9
+c1=1.95
+c2=0
+c3=0.0139
+c4=116.22
+c5=535.039
+K=73.2
+lambda_star=1.046
+fiber direction node 1=1
+fiber direction node 2=4
+[material-aclfiber]
+type=trans iso Mooney-Rivlin
+density=1.5e-9
+c1=1.95
+c2=0
+c3=0.0139
+c4=116.22
+c5=535.039
+K=73.2
+lambda_star=1.046
+fiber direction node 1=1
+fiber direction node 2=4
+[material-pcl]
+type=trans iso Mooney-Rivlin
+density=1.5e-9
+c1=3.25
+c2=0
+c3=0.1196
+c4=87.178
+c5=431.063
+K=122
+lambda_star=1.035
+fiber direction node 1=1
+fiber direction node 2=4
+[material-mcl]
+type=trans iso Mooney-Rivlin
+density=1.5e-9
+c1=1.44
+c2=0
+c3=0.57
+c4=48
+c5=467.1
+K=397
+lambda_star=1.063
+fiber direction node 1=1
+fiber direction node 2=4
+[material-lcl]
+type=trans iso Mooney-Rivlin
+density=1.5e-9
+c1=1.44
+c2=0
+c3=0.57
+c4=48
+c5=467.1
+K=397
+lambda_star=1.063
+fiber direction node 1=1
+fiber direction node 2=4
+
+[rigid_int]
+# Rigid interfaces.
+# interaction name = slave node set name, rigid body
+# Set any to False to disable.
+cart2fem = f2fem,femur
+cart2tib = tc2tib,tibia
+lig2tib = tiblig,tibia
+lig2fem = femlig,femur
+
+[contact]
+# interaction name = master surface set name, slave surface set name
+# Set any to False to disable.
+mcart2mcart=fcsm,tcsm
+lcart2lcart=fcsl,tcsl
+fcart2mmeni=fcsm,mmfemr
+fcart2lmeni=fcsl,lmfemr
+tcart2mmeni=tcsm,mmtibr
+tcart2lmeni=tcsl,lmtibr
+acl2pcl=aclsurf,pclsurf
+#mcl2femur=mcls,femmcl
+#mcl2tibia=mcls,mcltib
+#lcl2femur=lcls,femlcl
+#lcl2tibia=lcls,lcltib
+
+[contact_settings]
+# These settings apply to all of the interfaces defined under "contact".  See the FEBio user manual for information on what these options mean.
+type=facet-to-facet sliding
+laugon=0
+tolerance=0.2
+penalty=100
+auto_penalty=0
+two_pass=1
+search_radius=1
+
+[springs]
+# Creates spring elements not previously defined in the Abaqus .inp file.  Used here for creating meniscal horns, anchoring menisci to bone.  Connects every element in a node set to a single node such that the total stiffness is a fixed amount.
+# spring group name = node set name, end node number, total stiffness (units?), face area (units?)
+# Set any to False to disable.
+latant_horn = lmant, 14588, 600, 37.2
+latpost_horn = lmpost, 18877, 600, 24.58
+medant_horn = mmant, 14343, 600, 37.2
+medpost_horn = mmpost, 18763, 600, 24.58
+
+[transform]
+# A set of reference points used to transform the geometry into the Grood and Suntay (1983) coordinate system.
+
+# Posterior-most point on the medial femoral condyle.
+medial_f_cond=114.510002,77.801003,24.441999
+# Posterior-most point on the lateral femoral condyle.
+lateral_f_cond=108.129997,78.456001,66.514
+# Midpoint of the proximal face (cross-section of the bone shaft) of the femur.
+proximal_femur=79.168999,29.436001,46.682999
+# Approximate midpoint of the femur on the distal end.
+distal_femur=85.394997,74.856003,43.381001
+# Approximate midpoint of the tibia on the proximal end
+proximal_tibia=93.695,92.123001,44.549
+# The angle in radians to rotate the femoral axis about the X-axis.  This is to align the Z-axis with the line from the anterior superior iliac spine through the center of the patella.
+q_angle=0.0925025

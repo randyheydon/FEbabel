@@ -1,0 +1,26 @@
+[solver]
+title = tf_joint
+time_steps = 30
+
+[loadcurves]
+1 = 0,0; .1,.1; .2,.1; .3,.1; .4,.1; .5,.1; .6,.1; .7,.1; .8,.1; .9,.1; 1,.1; 1.1,.1; 1.2,.1; 1.3,.1; 1.4,.1; 1.5,.1; 1.6,.1; 1.7,.1; 1.8,.1; 1.9,.1; 2,.1; 2.1,.1; 2.2,.1; 2.3,.1; 2.4,.1; 2.5,.1; 2.6,.1; 2.7,.1; 2.8,.1; 2.9,.1; 3,.1
+
+2 = 0,0;
+    1,-100;
+    3,-100
+
+3 = 0,0;
+    1,0;
+    2.5,.785;
+    3,.785
+
+[step 1]
+femur = free,free,force;2;1, prescribed;3;1,free,free
+tibia = fixed,fixed,fixed, fixed,fixed,fixed
+
+[contact]
+# Disable all contact with menisci to simulate meniscectomy.
+fcart2mmeni = False
+fcart2lmeni = False
+tcart2mmeni = False
+tcart2lmeni = False

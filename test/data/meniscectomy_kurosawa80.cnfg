@@ -1,0 +1,16 @@
+INCLUDE meniscectomy_45deg.cnfg
+
+[solver]
+time_steps = 10
+
+[loadcurves]
+1 = 0,0; .1,.1; .2,.1; .3,.1; .4,.1; .5,.1; .6,.1; .7,.1; .8,.1; .9,.1; 1,.1
+2 = 0,0;
+    .1,-10;
+    .4,-500;
+    .7,-1000;
+    1,-1500
+
+[step 1]
+femur = free,free,force;2;1, fixed,free,fixed
+tibia = fixed,fixed,fixed, fixed,fixed,fixed

@@ -87,6 +87,16 @@ class TestInp(unittest.TestCase):
 
 
 
+class TestCnfg(unittest.TestCase):
+
+
+    def test_read_cnfg(self):
+        p = f.problem.FEproblem()
+        p.read_cnfg(os.path.join(datadir, 'meniscectomy_kurosawa80.cnfg'))
+        # TODO: Some actual tests.
+
+
+
 
 if __name__=='__main__':
     unittest.main()
