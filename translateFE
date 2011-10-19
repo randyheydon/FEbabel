@@ -1,3 +1,17 @@
 #!/usr/bin/env python2
 
+from optparse import OptionParser
+parser = OptionParser()
+usage='Usage: %prog [options] infile [outfile]'
+
+opts, args = parser.parse_args()
+
+if len(args) == 1:
+    import os.path
+    args.append( '%s.feb' % os.path.splitext(args[0])[0] )
+
+
 import febabel
+p = febabel.problem.FEproblem()
+p.read(args[0])
+p.write(args[1])
