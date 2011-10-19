@@ -38,12 +38,16 @@ def write(self, file_name_or_obj):
     # TODO: Material stuff.
 
     e_geometry = etree.SubElement(e_root, 'Geometry')
-    nodes = list(self.get_nodes())
+    node_ids = dict()
 
+    # Write out all nodes.  In the process, store the ID of each in a
+    # dictionary indexed by node object for fast retrieval later.
     e_nodes = etree.SubElement(e_geometry, 'Nodes')
-    for i,n in enumerate(nodes):
-        e_node = etree.SubElement(e_nodes, 'node', {'id':str(i+1)})
+    for i,n in enumerate(self.get_nodes()):
+        nid = str(i+1)
+        e_node = etree.SubElement(e_nodes, 'node', {'id':nid})
         e_node.text = ','.join( map(str,iter(n)) )
+        node_ids[n] = nid
 
     e_elements = etree.SubElement(e_geometry, 'Elements')
     # Get list of only those elements that FEBio lists in the Elements section.
@@ -52,7 +56,6 @@ def write(self, file_name_or_obj):
         e_elem = etree.SubElement(e_elements, element_write_map[type(e)],
             {'id':str(i+1), 'mat':'A MATERIAL'})
         # TODO: Materials listing.
-        e_elem.text = ','.join( str(nodes.index(n)+1)
-            for n in iter(e) )
+        e_elem.text = ','.join( node_ids[n] for n in iter(e) )
 
     etree.ElementTree(e_root).write(file_name_or_obj)
