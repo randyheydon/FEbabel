@@ -12,6 +12,7 @@ else:
     try: from cStringIO import StringIO
     except: from StringIO import StringIO
     sys.path.append(os.path.dirname(sys.path[0]))
+datadir = os.path.join(os.path.dirname(__file__), 'data')
 
 import febabel as f
 
@@ -19,7 +20,7 @@ import febabel as f
 class TestFeb(unittest.TestCase):
 
 
-    def test_writer(self):
+    def test_write_feb(self):
         p = f.problem.FEproblem()
         Node = f.geometry.Node
         nodes = [
@@ -55,10 +56,9 @@ class TestFeb(unittest.TestCase):
 class TestInp(unittest.TestCase):
 
 
-    def test_reader(self):
+    def test_read_inp(self):
         p = f.problem.FEproblem()
-        with open(os.path.join(os.path.dirname(__file__), 'data', 'tf_joint.inp')) as inp:
-            p.read_inp(inp)
+        p.read_inp(os.path.join(datadir, 'tf_joint.inp'))
         # Check all nodes and elements are accounted for.
         self.assertEqual(len(p.sets['tf_joint.inp:allnodes']), 96853)
         self.assertEqual(len(p.sets['tf_joint.inp:allelements']), 81653)

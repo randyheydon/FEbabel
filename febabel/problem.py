@@ -1,4 +1,5 @@
 from __future__ import with_statement
+import os
 
 from . import _formats
 
@@ -23,6 +24,19 @@ class FEproblem(object):
     def get_materials(self):
         "Returns the set of all materials found in elements."
         return set(e.material for e in self.elements)
+
+
+    def read(self, filename):
+        """Convenience function to run the appropriate reader method.
+        Currently guesses based on file extension."""
+        ext = os.path.splitext(filename)[1][1:]
+        getattr(self, 'read_%s'%ext)(filename)
+
+    def write(self, filename):
+        """Convenience function to run the appropriate writer method.
+        Currently guesses based on file extension."""
+        ext = os.path.splitext(filename)[1][1:]
+        getattr(self, 'write_%s'%ext)(filename)
 
 
 # Add in all reader/writer methods to FEproblem class.
