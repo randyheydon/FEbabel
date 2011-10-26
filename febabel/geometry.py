@@ -76,6 +76,16 @@ class Element(object):
         self._nodes = [ n.next() for i in xrange(self.n_nodes) ]
         self.material = material
 
+
+    # Mathematical properties of the element.
+    def get_vertex_avg(self):
+        "Calculate the average location of all nodes in this element."
+        x = sum( n[0] for n in self._nodes ) / float(self.n_nodes)
+        y = sum( n[1] for n in self._nodes ) / float(self.n_nodes)
+        z = sum( n[2] for n in self._nodes ) / float(self.n_nodes)
+        return (x,y,z)
+
+
     # So an Element object can be treated like a list.
     def __iter__(self):
         return iter(self._nodes)
@@ -109,6 +119,7 @@ class Hex8(SolidElement):
 class ShellElement(Element):
     "Base class for shell elements."
     __slots__ = ['thickness']
+    # TODO: thickness should be a list; one for each node.
     def __init__(self, nodes, material=None, thickness=0.0):
         Element.__init__(self, nodes, material)
         self.thickness = thickness

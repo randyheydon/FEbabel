@@ -61,6 +61,22 @@ class TestElements(unittest.TestCase):
             self.assertEqual(i, j)
 
 
+    def test_math(self):
+        self.assertEqual( g.Shell3( [g.Node((0,0,0)), g.Node((0,0,1.5)),
+            g.Node((1,1,1))] ).get_vertex_avg(),
+            (1.0/3, 1.0/3, 2.5/3) )
+        # Not sure if using tuples instead of Node objects should be a feature,
+        # but may as well test for it until I decide to get rid of it. 
+        # NOTE: If you're looking here for documentation, I recommend against this!
+        self.assertEqual( g.Shell3( [(0,0,0), (0,0,1.5),
+            (1,1,1)] ).get_vertex_avg(),
+            (1.0/3, 1.0/3, 2.5/3) )
+
+        self.assertEqual( g.Tet4( [g.Node((0,0,0)), g.Node((0,0,1.5)),
+            g.Node((1,1,1)), g.Node((1,2,0))] ).get_vertex_avg(),
+            (0.5, 0.75, 2.5/4) )
+
+
 
 
 if __name__ == '__main__':
