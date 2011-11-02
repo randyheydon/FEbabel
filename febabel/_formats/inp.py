@@ -5,7 +5,7 @@ from __future__ import with_statement
 import os
 from warnings import warn
 
-from .. import geometry as g
+from .. import geometry as g, problem
 from ._common import ValsDict, SETSEP, NSET, ESET
 
 
@@ -122,3 +122,5 @@ def read(self, filename):
                 warn('Unrecognized section "%s".  Skipping remainder of file.'
                     % l.strip())
                 break
+
+problem.FEproblem.read_inp = read

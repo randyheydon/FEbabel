@@ -4,7 +4,9 @@ Contains a method for writing an FEproblem to FEBio's .feb format.
 Supports .feb version 1.1.
 """
 
-from .. import geometry as g
+from warnings import warn
+
+from .. import geometry as geo, materials as mat, problem
 
 # Map internal element types to the FEBio identifier to which they're written.
 # Spring and surface elements are handled differently, so not included.
@@ -59,3 +61,5 @@ def write(self, file_name_or_obj):
         e_elem.text = ','.join( node_ids[n] for n in iter(e) )
 
     etree.ElementTree(e_root).write(file_name_or_obj)
+
+problem.FEproblem.write_feb = write

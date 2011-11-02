@@ -16,6 +16,7 @@ else:
     cp_kwargs = {}
 
 
+from .. import problem
 from ._common import SETSEP, NSET, ESET
 
 SEPCHAR = ','
@@ -128,8 +129,10 @@ def read(self, filename):
 
 
     # TODO: Something with solver settings.
+    # TODO: Generate materials, then apply to elements.
     # TODO: Generate loadcurves.
     # TODO: Generate constraints and their switches, then apply to bodies.
-    # TODO: Generate materials, then apply to elements.
     # TODO: Figure out contact.
     # TODO: Generate springs.
+
+problem.FEproblem.read_cnfg = read

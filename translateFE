@@ -7,7 +7,7 @@ opts, args = parser.parse_args()
 
 if len(args) < 1:
     parser.error('Input file must be given.')
-elif len(args) > 1:
+elif len(args) > 2:
     parser.error('Too many files specified.')
 
 elif len(args) == 1:
