@@ -86,7 +86,9 @@ def _params_feb_TransIso(self):
         d['fiber'] = ( 'local', ','.join(str(n+1) for n in ax.edge1) )
     else:
         d['fiber'] = ('user', '')
-        # TODO: Actually generate user orientation data.
+        # Mark this material as needing per-element orientation data.
+        self._user_fiber_feb = True
+
     return d
 mat.TransIsoElastic._params_feb = _params_feb_TransIso
 
@@ -156,6 +158,7 @@ def write(self, file_name_or_obj):
 
     e_geometry = etree.SubElement(e_root, 'Geometry')
     node_ids = dict()
+    elem_ids = dict()
 
     # Write out all nodes.  In the process, store the ID of each in a
     # dictionary indexed by node object for fast retrieval later.
@@ -171,10 +174,25 @@ def write(self, file_name_or_obj):
     elements = [ e for e in self.elements
         if isinstance(e, (geo.SolidElement, geo.ShellElement)) ]
     for i,e in enumerate(elements):
+        eid = str(i+1)
+        elem_ids[e] = eid
         e_elem = etree.SubElement(e_elements, e._name_feb,
-            {'id':str(i+1), 'mat':matl_ids[e.material]})
-        # TODO: Materials listing.
+            {'id':eid, 'mat':matl_ids[e.material]})
         e_elem.text = ','.join( node_ids[n] for n in iter(e) )
+
+    e_elemdata = etree.SubElement(e_geometry, 'ElementData')
+    for e in ( e for e in self.elements if isinstance(e, geo.ShellElement) or
+        hasattr(e.material,'_user_fiber_feb') ):
+
+        e_elem = etree.SubElement(e_elemdata, 'element', {'id':elem_ids[e]})
+        if hasattr(e.material, '_user_fiber_feb'):
+            e_fiber = etree.SubElement(e_elem, 'fiber')
+            e_fiber.text = ','.join(map(str,e.material.axis_func(e)[0]))
+        if isinstance(e, geo.ShellElement):
+            # TODO: Per-node thickness.  Currently forces constant thickness
+            # throughout shell.
+            e_thick = etree.SubElement(e_elem, 'thickness')
+            e_thick.text = ','.join( [str(e.thickness)]*len(e) )
 
 
     etree.ElementTree(e_root).write(file_name_or_obj)

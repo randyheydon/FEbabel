@@ -18,12 +18,12 @@ import febabel as f
 
 
 class TestFeb(unittest.TestCase):
+    # TODO: Test shell elements and their ElementData.
 
 
     def test_write_feb(self):
         p = f.problem.FEproblem()
         Node = f.geometry.Node
-        # TODO: Check a wider range of materials.
         matl1 = f.materials.Ogden([1,2,3,4,5,6,7],[8,9,10,11,12,13,14], 2.2)
         matl2 = f.materials.TransIsoElastic(15,16,17,18,
             axis_func=f.materials.SphericalOrientation((0,0,0),(0,0,1)),
@@ -96,12 +96,15 @@ class TestFeb(unittest.TestCase):
             mat.MooneyRivlin(3,4,5),
             mat.Ogden([5,6,7], [8,9,10], 11),
             mat.Rigid((13,14,15)),
-            mat.TransIsoElastic(16,17,18,19, mat.NodalOrientation((0,1),(1,3)),
+            mat.TransIsoElastic(16,17,18,19, mat.NodalOrientation((0,1),(0,3)),
                 mat.MooneyRivlin(20,21,22)),
             mat.LinearOrthotropic(23,24,25,26,27,28,29,30,31,
                 mat.NodalOrientation((0,2),(2,3))),
             mat.FungOrthotropic(32,33,34,35,36,37,38,39,40,41,42,
                 mat.VectorOrientation((0,0,1),(1,0,1))),
+            mat.TransIsoElastic(43,44,45,46,
+                lambda e: (e.get_vertex_avg(), [0,1,0], [0,0,1]),
+                mat.VerondaWestmann(47,48,49)),
         ]
         p.elements.update(f.geometry.Tet4(nodes, m) for m in materials)
 
@@ -177,6 +180,18 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(fung.find('mat_axis').get('type'), 'vector')
         self.assertEqual(fung.find('mat_axis').find('a').text, '0,0,1')
         self.assertEqual(fung.find('mat_axis').find('d').text, '1,0,1')
+        trans2 = matls['trans iso Veronda-Westmann']
+        self.assertEqual(trans2.find('c1').text, '47')
+        self.assertEqual(trans2.find('c2').text, '48')
+        self.assertEqual(trans2.find('c3').text, '43')
+        self.assertEqual(trans2.find('c4').text, '44')
+        self.assertEqual(trans2.find('c5').text, '45')
+        self.assertEqual(trans2.find('lam_max').text, '46')
+        self.assertEqual(trans2.find('k').text, '49')
+        self.assertEqual(trans2.find('fiber').get('type'), 'user')
+        # Check ElementData is created properly for this element.
+        self.assertEqual( '0.25,0.25,0.25',
+            tree.find('Geometry').find('ElementData').find('element').find('fiber').text )
 
 
 
