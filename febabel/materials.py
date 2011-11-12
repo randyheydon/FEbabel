@@ -7,12 +7,14 @@ class Material(object):
 
     def _store(self, params):
         del params['self']
-        self.parameters = params.copy()
+        # TODO: Have parameters as a dict linked to attributes?
+        self.parameters = params.keys()
         for k,v in params.iteritems():
             setattr(self, k, v)
 
 
 
+# TODO: Docstrings showing strain-energy functions.
 class LinearIsotropic(Material):
     def __init__(self, E, v):
         self._store(locals())
@@ -21,27 +23,51 @@ class NeoHookean(Material):
     def __init__(self, E, v):
         self._store(locals())
 
+class HolmesMow(Material):
+    def __init__(self, E, v, beta):
+        self._store(locals())
+
+# TODO: Handle incomp enforcement (laugon, atol).
 class MooneyRivlin(Material):
     def __init__(self, c1, c2, k):
         self._store(locals())
 
-class Ogden(Material):
-    def __init__(ci, mi, k, laugon=False, atol=0.01):
+class VerondaWestmann(Material):
+    def __init__(self, c1, c2, k):
         self._store(locals())
 
-class Porous(Material):
-    def __init__(self, porosity, base):
+class ArrudaBoyce(Material):
+    def __init__(self, mu, N, k):
+        self._store(locals())
+
+class Ogden(Material):
+    # TODO: FEBio has both incomp Ogden and "Ogden unconstrained".  How deal?
+    def __init__(self, ci, mi, k):
         self._store(locals())
 
 class Rigid(Material, Constrainable):
-    def __init__(self, COM=None):
+    # TODO: FEBio has E and v for "auto-penalty contact formulation".  Need?
+    def __init__(self, center_of_mass=None, density=None):
         Constrainable.__init__(self)
         self._store(locals())
 
-
+# Transversely isotropic materials.
 class TransIsoElastic(Material):
     "Adds fibers to a (hyper)elastic base material."
-    def __init__(self, c3, c4, c5, lam_max, fiber_dist, base):
+    def __init__(self, c3, c4, c5, lam_max, axis_func, base):
+        self._store(locals())
+
+# Orthotropic materials.
+class OrthoMaterial(Material):
+    """Base class for orthotropic materials, not including iso or trans-iso
+    materials."""
+
+class LinearOrthotropic(OrthoMaterial):
+    def __init__(self, E1, E2, E3, G12, G23, G31, v12, v23, v31, axis_func):
+        self._store(locals())
+
+class FungOrthotropic(OrthoMaterial):
+    def __init__(self, mu1, mu2, mu3, l11, l22, l33, l12, l23, l31, c, k, axis_func):
         self._store(locals())
 
 

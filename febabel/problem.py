@@ -21,7 +21,7 @@ class FEproblem(object):
 
     def get_materials(self):
         "Returns the set of all materials found in elements."
-        return set(e.material for e in self.elements)
+        return set(e.material for e in self.elements if e.material is not None)
 
 
     def read(self, filename):

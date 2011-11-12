@@ -18,14 +18,10 @@ class TestMaterials(unittest.TestCase):
         l = m.LinearIsotropic(12.5, 15)
         self.assertEqual(l.E, 12.5)
         self.assertEqual(l.v, 15)
-        for k,v in l.parameters.items():
-            self.assertEqual(v, getattr(l, k))
         mr = m.MooneyRivlin(1,4,9)
         self.assertEqual(mr.c1, 1)
         self.assertEqual(mr.c2, 4)
         self.assertEqual(mr.k, 9)
-        for k,v in mr.parameters.items():
-            self.assertEqual(v, getattr(mr, k))
 
 
 

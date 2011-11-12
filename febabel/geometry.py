@@ -94,7 +94,7 @@ class Element(object):
     def __setitem__(self, i, node):
         self._nodes[i] = node
     def __len__(self):
-        # Could return len(self._pos), but it will always be 3...
+        # Could return len(self._nodes), but it will always be constant...
         return self.n_nodes
 
     def __repr__(self):
