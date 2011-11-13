@@ -195,7 +195,8 @@ def write(self, file_name_or_obj):
             e_thick.text = ','.join( [str(e.thickness)]*len(e) )
 
 
-    etree.ElementTree(e_root).write(file_name_or_obj)
+    etree.ElementTree(e_root).write(file_name_or_obj,
+        encoding='UTF-8', xml_declaration=True)
 
 
 problem.FEproblem.write_feb = write
