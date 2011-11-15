@@ -86,8 +86,6 @@ def _params_feb_TransIso(self):
         d['fiber'] = ( 'local', ','.join(str(n+1) for n in ax.edge1) )
     else:
         d['fiber'] = ('user', '')
-        # Mark this material as needing per-element orientation data.
-        self._user_fiber_feb = True
 
     return d
 mat.TransIsoElastic._params_feb = _params_feb_TransIso
@@ -127,6 +125,8 @@ def write(self, file_name_or_obj):
     e_material = etree.SubElement(e_root, 'Material')
     matl_ids = dict()
     matl_ids[None] = '0'
+    # Set of materials requiring per-element orientation data in ElementData.
+    matl_user_orient = set()
 
     for i,m in enumerate(self.get_materials()):
         mid = str(i+1)
@@ -143,9 +143,13 @@ def write(self, file_name_or_obj):
             e_param = etree.SubElement(e_mat, k)
             if isinstance(v, basestring):
                 e_param.text = v
+
             # If value is a tuple, first entry is 'type' attrib, second is text.
             else:
                 e_param.set('type', v[0])
+                # Note if this material needs user orientation data.
+                if v[0] == 'user': matl_user_orient.add(m)
+
                 if isinstance(v[1], basestring):
                     e_param.text = v[1]
                 # If second tuple value is a dict, these are parameters for the
@@ -182,10 +186,10 @@ def write(self, file_name_or_obj):
 
     e_elemdata = etree.SubElement(e_geometry, 'ElementData')
     for e in ( e for e in self.elements if isinstance(e, geo.ShellElement) or
-        hasattr(e.material,'_user_fiber_feb') ):
+        e.material in matl_user_orient ):
 
         e_elem = etree.SubElement(e_elemdata, 'element', {'id':elem_ids[e]})
-        if hasattr(e.material, '_user_fiber_feb'):
+        if e.material in matl_user_orient:
             e_fiber = etree.SubElement(e_elem, 'fiber')
             e_fiber.text = ','.join(map(str,e.material.axis_func(e)[0]))
         if isinstance(e, geo.ShellElement):
@@ -195,8 +199,7 @@ def write(self, file_name_or_obj):
             e_thick.text = ','.join( [str(e.thickness)]*len(e) )
 
 
-    etree.ElementTree(e_root).write(file_name_or_obj,
-        encoding='UTF-8', xml_declaration=True)
+    etree.ElementTree(e_root).write(file_name_or_obj, encoding='UTF-8')
 
 
 problem.FEproblem.write_feb = write

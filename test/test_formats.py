@@ -106,7 +106,10 @@ class TestFeb(unittest.TestCase):
                 lambda e: (e.get_vertex_avg(), [0,1,0], [0,0,1]),
                 mat.VerondaWestmann(47,48,49)),
         ]
+        # Create element for each material.
         p.elements.update(f.geometry.Tet4(nodes, m) for m in materials)
+        # Plus one extra for the user-defined fiber orientation.
+        p.elements.add(f.geometry.Tet4(nodes, materials[7]))
 
         outfile = StringIO()
         p.write_feb(outfile)
@@ -189,9 +192,11 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(trans2.find('lam_max').text, '46')
         self.assertEqual(trans2.find('k').text, '49')
         self.assertEqual(trans2.find('fiber').get('type'), 'user')
-        # Check ElementData is created properly for this element.
-        self.assertEqual( '0.25,0.25,0.25',
-            tree.find('Geometry').find('ElementData').find('element').find('fiber').text )
+        # Check ElementData is created properly for these elements.
+        elemdat = tree.find('Geometry').find('ElementData').findall('element')
+        self.assertEqual(len(elemdat), 2)
+        for e in elemdat:
+            self.assertEqual(e.find('fiber').text, '0.25,0.25,0.25')
 
 
 
