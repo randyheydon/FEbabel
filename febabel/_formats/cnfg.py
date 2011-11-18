@@ -16,7 +16,7 @@ else:
     cp_kwargs = {}
 
 
-from .. import problem
+from .. import problem, materials as mat
 from ._common import SETSEP, NSET, ESET
 
 SEPCHAR = ','
@@ -26,6 +26,33 @@ MATL_HEADER = 'material-'
 
 DEFAULTS = 'defaults.cnfg'
 INCL_KEY = '\nINCLUDE '
+
+
+# Relates each material type name that can appear in a cnfg file to a function
+# that takes the parameters dict and returns a material object.
+# TODO: Density support for all materials.
+# TODO: Cover more materials.  Only these four are currently used in configs.
+f = float
+material_read_map = {
+    'rigid': lambda p: mat.Rigid(
+        map( f,p['com'].split(SEPCHAR) ), f(p['density']) ),
+    'Mooney-Rivlin': lambda p: mat.MooneyRivlin(
+        f(p['c1']), f(p['c2']), f(p['k']) ),
+    'Fung Orthotropic': lambda p: mat.FungOrthotropic(
+        f(p['e1']), f(p['e2']), f(p['e3']),
+        f(p['g12']), f(p['g23']), f(p['g31']),
+        f(p['v12']), f(p['v23']), f(p['v31']),
+        f(p['c']), f(p['k']), mat.NodalOrientation(
+            (int(p['axis1'])-1, int(p['axis2'])-1),
+            (int(p['axis1'])-1, int(p['axis3'])-1) ) ),
+    'trans iso Mooney-Rivlin': lambda p: mat.TransIsoElastic(
+        f(p['c3']), f(p['c4']), f(p['c5']),
+        f(p['lambda_star']), mat.NodalOrientation(
+            (int(p['fiber direction node 1'])-1, int(p['fiber direction node 2'])-1),
+            # Second edge is arbitrary for a trans iso material.
+            (int(p['fiber direction node 1'])-1, int(p['fiber direction node 2'])) ),
+        mat.MooneyRivlin( f(p['c1']), f(p['c2']), f(p['k']) ) ),
+}
 
 
 
@@ -79,7 +106,7 @@ def read(self, filename):
     # in the config file directly by set name.  Otherwise, all sets must be
     # accessed as "filename:setname".
     # Note that str.startswith('') is always True.
-    geo_default = geo_files[0] if len(geo_files)==1 else ''
+    geo_default = '%s:'%geo_files[0] if len(geo_files)==1 else ''
 
 
     # Collect all nodes in the geometry source files.
@@ -128,11 +155,28 @@ def read(self, filename):
         node.x, node.y, node.z = pos
 
 
+    # Create materials and apply to sets.
+    for s in cp.sections():
+        if s.startswith(MATL_HEADER):
+            params = dict(cp.items(s))
+            mat = material_read_map[ params['type'] ](params)
+
+            # Get the set name to which the material is being applied.
+            # If the given set name already specifies its originating file, go
+            # with it.  Otherwise (in a single-geometry config), add the geo
+            # file name to the set name.
+            eset = s[len(MATL_HEADER):]
+            if not eset.startswith(geo_default):
+                eset = geo_default + eset
+            for elem in self.sets[eset]:
+                elem.material = mat
+
+
     # TODO: Something with solver settings.
-    # TODO: Generate materials, then apply to elements.
     # TODO: Generate loadcurves.
     # TODO: Generate constraints and their switches, then apply to bodies.
     # TODO: Figure out contact.
     # TODO: Generate springs.
+
 
 problem.FEproblem.read_cnfg = read
