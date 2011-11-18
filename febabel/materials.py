@@ -1,4 +1,5 @@
 from .constraints import Constrainable
+# FIXME: Density belongs in every material.
 
 
 
@@ -67,7 +68,7 @@ class LinearOrthotropic(OrthoMaterial):
         self._store(locals())
 
 class FungOrthotropic(OrthoMaterial):
-    def __init__(self, mu1, mu2, mu3, l11, l22, l33, l12, l23, l31, c, k, axis_func):
+    def __init__(self, E1, E2, E3, G12, G23, G31, v12, v23, v31, c, k, axis_func):
         self._store(locals())
 
 
