@@ -175,7 +175,7 @@ def write(self, file_name_or_obj):
 
     e_elements = etree.SubElement(e_geometry, 'Elements')
     # Get list of only those elements that FEBio lists in the Elements section.
-    elements = [ e for e in self.elements
+    elements = [ e for e in self.get_elements()
         if isinstance(e, (geo.SolidElement, geo.ShellElement)) ]
     for i,e in enumerate(elements):
         eid = str(i+1)
@@ -185,8 +185,8 @@ def write(self, file_name_or_obj):
         e_elem.text = ','.join( node_ids[n] for n in iter(e) )
 
     e_elemdata = etree.SubElement(e_geometry, 'ElementData')
-    for e in ( e for e in self.elements if isinstance(e, geo.ShellElement) or
-        e.material in matl_user_orient ):
+    for e in ( e for e in self.get_elements()
+        if isinstance(e, geo.ShellElement) or e.material in matl_user_orient ):
 
         e_elem = etree.SubElement(e_elemdata, 'element', {'id':elem_ids[e]})
         if e.material in matl_user_orient:

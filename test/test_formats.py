@@ -34,8 +34,9 @@ class TestFeb(unittest.TestCase):
             Node((0,0,1)), Node((1,0,1)), Node((1,1,1)), Node((0,1,1)),
             Node((0,0,2)), Node((1,0,2)), Node((1,1,2)), Node((0,1,2)),
         ]
-        p.elements.add(f.geometry.Hex8(nodes[0:8], matl1))
-        p.elements.add(f.geometry.Hex8(nodes[4:12], matl2))
+        p.sets[''] = set()
+        p.sets[''].add(f.geometry.Hex8(nodes[0:8], matl1))
+        p.sets[''].add(f.geometry.Hex8(nodes[4:12], matl2))
 
         outfile = StringIO()
         p.write_feb(outfile)
@@ -107,9 +108,9 @@ class TestFeb(unittest.TestCase):
                 mat.VerondaWestmann(47,48,49)),
         ]
         # Create element for each material.
-        p.elements.update(f.geometry.Tet4(nodes, m) for m in materials)
+        p.sets[''] = set(f.geometry.Tet4(nodes, m) for m in materials)
         # Plus one extra for the user-defined fiber orientation.
-        p.elements.add(f.geometry.Tet4(nodes, materials[7]))
+        p.sets[''].add(f.geometry.Tet4(nodes, materials[7]))
 
         outfile = StringIO()
         p.write_feb(outfile)
@@ -209,7 +210,7 @@ class TestInp(unittest.TestCase):
         # Check all nodes and elements are accounted for.
         self.assertEqual(len(p.sets['tf_joint.inp:allnodes']), 96853)
         self.assertEqual(len(p.sets['tf_joint.inp:allelements']), 81653)
-        self.assertEqual(len(p.elements), 81653 + 35604)
+        self.assertEqual(len(p.get_elements()), 81653 + 35604)
         # Check sets have found the correct nodes/elements.
         self.assertTrue( p.sets['tf_joint.inp:allnodes']['25225'] in
             p.sets['tf_joint.inp:f2fem'])

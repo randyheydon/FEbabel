@@ -63,8 +63,6 @@ def read(self, filename):
                     v = l.strip().split(',')
                     elemlist[v[0]] = etype( nodelist[i] for i in v[1:] )
                     l = fileobj.readline()
-                # Add these elements into the main problem's element set.
-                self.elements.update(elemlist)
 
             elif l.startswith('*NSET,NSET=') or l.startswith('*ELSET,ELSET='):
                 # Parse the named node and element sets.
@@ -114,8 +112,6 @@ def read(self, filename):
                     # TODO: Have it detect and reuse Surface elements?
                     surflist.add( g.Surface4(face) )
                     l = fileobj.readline()
-                # Add these elements into the main problem's element set.
-                self.elements.update(surflist)
 
 
             else:
