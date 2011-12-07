@@ -49,7 +49,7 @@ class Ogden(Material):
 class Rigid(Material, Constrainable):
     # TODO: FEBio has E and v for "auto-penalty contact formulation".  Need?
     def __init__(self, center_of_mass=None, density=None):
-        Constrainable.__init__(self)
+        Constrainable.__init__(self, 'x','y','z','Rx','Ry','Rz')
         self._store(locals())
 
 # Transversely isotropic materials.

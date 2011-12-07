@@ -1,10 +1,12 @@
 class Constrainable(object):
-    "A mixin to allow different object types to accept constraints."
+    """A mixin to allow different object types to accept constraints on each of
+    its degrees of freedom."""
 
     __slots__ = ['constraints']
 
-    def __init__(self):
-        self.constraints = list()
+    def __init__(self, *degrees_of_freedom):
+        self.constraints = dict( (i,None) for i in degrees_of_freedom )
+        # TODO: Prevent new DOFs from being added after the fact.
 
 
 
@@ -84,7 +86,7 @@ loadcurve_ramp = LoadCurve({0:0, 1:1})
 class Constraint(Switchable):
     "Base class for different types of constraints/loads."
 
-    def __init__(self, vector, loadcurve, switchcurve=loadcurve_constant):
+    def __init__(self, loadcurve, multiplier=1, switchcurve=loadcurve_constant):
         Switchable.__init__(self, switchcurve)
         self.vector = vector
         self.loadcurve = loadcurve
@@ -94,7 +96,7 @@ class Force(Constraint): pass
 class Displacement(Constraint): pass
 class Fixed(Displacement):
     def __init__(self):
-        Displacement.__init__(self, (0,0,0), loadcurve_zero)
+        Displacement.__init__(self, loadcurve_zero, 0)
 
 
 
