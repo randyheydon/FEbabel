@@ -10,13 +10,26 @@ class Constrainable(object):
 
 
 
-class Switchable(object):
-    """A mixin to allow an object to be activated at specific times.
-    A switchable object will be active during times that its given loadcurve
-    evaluates to True, and inactive when False."""
+class Switch(object):
+    """A mixin to help create a container for other objects that can be activated
+    or deactivated at specific times.
 
-    def __init__(self, switchcurve):
-        self.switchcurve = loadcurve
+    points is a dict with numeric keys and values.  Each key represents a time,
+    while its corresponding value represents the object activating at that
+    time."""
+
+    def __init__(self, points):
+        self.points = points
+
+    def get_active(self, time):
+        """Find which contained object is active at the specified time.
+        If the specified time is before the earliest specified time, None is
+        returned."""
+        # Iterate backwards through all given times to find the most recent.
+        for t in sorted(self.points.iterkeys(), reverse=True):
+            if t <= time:
+                return self.points[t]
+        return None
 
 
 
@@ -83,12 +96,11 @@ loadcurve_ramp = LoadCurve({0:0, 1:1})
 
 
 
-class Constraint(Switchable):
+class Constraint(object):
     "Base class for different types of constraints/loads."
 
-    def __init__(self, loadcurve, multiplier=1, switchcurve=loadcurve_constant):
-        Switchable.__init__(self, switchcurve)
-        self.vector = vector
+    def __init__(self, loadcurve, multiplier=1):
+        self.multiplier = multiplier
         self.loadcurve = loadcurve
 
 
@@ -99,12 +111,21 @@ class Fixed(Displacement):
         Displacement.__init__(self, loadcurve_zero, 0)
 
 
+class SwitchConstraint(Switch, Constraint):
+    """Acts as a container for Constraint objects that change with time, while
+    presenting itself as a Constraint object."""
 
 
-class Contact(Switchable):
+
+
+class Contact(object):
     """Defines a contact interface between two surface sets."""
 
-    def __init__(self, master, slave, switchcurve=loadcurve_constant):
-        Switchable.__init__(self, switchcurve)
+    def __init__(self, master, slave):
         self.master = master
         self.slave = slave
+
+
+class SwitchContact(Switch, Contact):
+    """Acts as a container for Contact objects that change with time, while
+    presenting itself as a Contact object."""
