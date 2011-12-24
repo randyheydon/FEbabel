@@ -4,7 +4,7 @@ See https://simtk.org/home/openknee
 """
 from __future__ import with_statement
 
-import ConfigParser, os.path
+import ConfigParser, os.path, itertools
 try: from cStringIO import StringIO
 except: from StringIO import StringIO
 from warnings import warn
@@ -16,7 +16,7 @@ else:
     cp_kwargs = {}
 
 
-from .. import problem, materials as mat
+from .. import problem, materials as mat, constraints as con
 from ._common import SETSEP, NSET, ESET
 
 SEPCHAR = ','
@@ -156,25 +156,74 @@ def read(self, filename):
 
 
     # Create materials and apply to sets.
+    materials = dict()
     for s in cp.sections():
         if s.startswith(MATL_HEADER):
             params = dict(cp.items(s))
-            mat = material_read_map[ params['type'] ](params)
+            matl = material_read_map[ params['type'] ](params)
 
             # Get the set name to which the material is being applied.
             # If the given set name already specifies its originating file, go
             # with it.  Otherwise (in a single-geometry config), add the geo
             # file name to the set name.
             eset = s[len(MATL_HEADER):]
+            materials[eset] = matl # For lookup when setting rigid constraints.
             if not eset.startswith(geo_default):
                 eset = geo_default + eset
             for elem in self.sets[eset]:
-                elem.material = mat
+                elem.material = matl
+
+
+    # Set constraints.
+    # First generate loadcurves.
+    loadcurves = dict()
+    for n,curve in cp.items('loadcurves'):
+        loadcurves[n] = con.LoadCurve( dict(
+            map(float, pt.split(SEPCHAR)) for pt in curve.split(SEPCHAR2) ),
+            # FIXME: Should not assume that lc option contains a valid
+            # interpolation method.  Use a dict lookup instead.
+            interpolation=cp.get('options','lc') )
+
+    # Then go through rigid body constraints for each step.
+    step_duration = cp.getfloat('solver','time_steps') * cp.getfloat('solver','step_size')
+    bodies = dict()
+    for cnt in itertools.count():
+        secn = 'step %s' % (cnt+1)
+        if not cp.has_section(secn): break
+        step_start = step_duration * cnt
+
+        for body,constr_string in cp.items(secn):
+            # If this body hasn't been seen in any step so far, give it an
+            # empty SwitchConstraint for each of its 6 degrees of freedom.
+            switches = bodies.setdefault( body,
+                [con.SwitchConstraint({}) for _ in xrange(6)] )
+
+            # Add the appropriate constraint at the current time for each DOF.
+            for switch,constr in zip(switches, constr_string.split(SEPCHAR)):
+                if 'free' in constr:
+                    switch.points[step_start] = None
+                elif 'fixed' in constr:
+                    switch.points[step_start] = con.Fixed()
+                elif 'force' in constr:
+                    _, lc, m = constr.split(SEPCHAR2)
+                    switch.points[step_start] = con.Force(
+                        loadcurves[lc.strip()], float(m) )
+                elif 'prescribed' in constr:
+                    _, lc, m = constr.split(SEPCHAR2)
+                    switch.points[step_start] = con.Displacement(
+                        loadcurves[lc.strip()], float(m) )
+
+    # And apply each assembled switch constraint to the corresponding degree of
+    # freedom of the corresponding rigid body.
+    # NOTE: In the cnfg file, constraints must be ordered as x,y,z,Rx,Ry,Rz.
+    # If that is not followed, here is where it will screw up.
+    for body,switches in bodies.iteritems():
+        matl = materials[body]
+        for dof,switch in zip( ('x','y','z','Rx','Ry','Rz'), switches ):
+            matl.constraints[dof] = switch
 
 
     # TODO: Something with solver settings.
-    # TODO: Generate loadcurves.
-    # TODO: Generate constraints and their switches, then apply to bodies.
     # TODO: Figure out contact.
     # TODO: Generate springs.
 

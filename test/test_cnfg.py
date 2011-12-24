@@ -108,6 +108,32 @@ class TestCnfg(unittest.TestCase):
             self.assertEqual(m.base.c2, 0)
             self.assertEqual(m.base.k, 397)
 
+        # Check that constraints are applied properly to the rigid bodies.
+        mtibia = list( p.sets['tf_joint.inp:tibia'] )[0].material
+        self.assertTrue( isinstance(mtibia.constraints['Rx'],
+            f.constraints.SwitchConstraint) )
+        for dof in ('x','y','z','Rx','Ry','Rz'):
+            self.assertTrue( isinstance(mtibia.constraints[dof].points[0],
+                f.constraints.Fixed) )
+
+        mfemur = list( p.sets['tf_joint.inp:femur'] )[0].material
+        self.assertTrue( isinstance(mfemur.constraints['Rx'],
+            f.constraints.SwitchConstraint) )
+        self.assertEqual(mfemur.constraints['x'].points, {0:None})
+        self.assertEqual(mfemur.constraints['y'].points, {0:None})
+        self.assertTrue( isinstance(mfemur.constraints['Rx'].points[0],
+            f.constraints.Fixed) )
+        self.assertEqual(mfemur.constraints['Ry'].points, {0:None})
+        self.assertTrue( isinstance(mfemur.constraints['Rz'].points[0],
+            f.constraints.Fixed) )
+
+        force = mfemur.constraints['z'].points[0]
+        self.assertTrue( isinstance(force, f.constraints.Force) )
+        self.assertEqual(force.multiplier, 1.0)
+        lc = force.loadcurve
+        self.assertEqual(lc.interpolation, f.constraints.LoadCurve.IN_LINEAR)
+        self.assertEqual(lc.points, {0:0, 0.1:-10, 0.4:-500, 0.7:-1000, 1:-1500})
+
 
 
 
