@@ -6,7 +6,7 @@ Supports .feb version 1.1.
 
 from warnings import warn
 
-from .. import geometry as geo, materials as mat, problem
+from .. import geometry as geo, materials as mat, constraints as con, problem
 
 
 # Data for converting internal objects to FEBio's form.
@@ -34,6 +34,18 @@ mat.TransIsoElastic._name_feb = property(
 mat.LinearOrthotropic._name_feb = 'linear orthotropic'
 mat.FungOrthotropic._name_feb = 'Fung orthotropic'
 
+loadcurve_interp_map = {
+    con.LoadCurve.IN_LINEAR: 'linear',
+    con.LoadCurve.IN_STEP: 'step',
+    con.LoadCurve.IN_CUBIC_SPLINE: 'smooth',
+}
+loadcurve_extrap_map = {
+    con.LoadCurve.EX_CONSTANT: 'constant',
+    con.LoadCurve.EX_TANGENT: 'tangent',
+    con.LoadCurve.EX_REPEAT: 'repeat',
+    con.LoadCurve.EX_REPEAT_OFFSET: 'repeat offset',
+}
+
 
 # Methods to get dictionary of parameters.
 # Each key is a string in the form used in FEBio to represent the parameter.
@@ -46,13 +58,9 @@ mat.Material._params_feb = _params_feb
 # Ogden's parameters list requires it have a slightly different approach.
 def _params_feb_Ogden(self):
     d = dict()
-    if len(self.ci) > 6: ci = self.ci[:6]
-    else: ci = self.ci
-    for i,v in enumerate(ci):
+    for i,v in enumerate(self.ci if len(self.ci) <= 6 else self.ci[:6]):
         d['c%s' % (i+1)] = str(v)
-    if len(self.mi) > 6: mi = self.mi[:6]
-    else: mi = self.mi
-    for i,v in enumerate(mi):
+    for i,v in enumerate(self.mi if len(self.mi) <= 6 else self.mi[:6]):
         d['m%s' % (i+1)] = str(v)
     d['k'] = str(self.k)
     return d
@@ -197,6 +205,40 @@ def write(self, file_name_or_obj):
             # throughout shell.
             e_thick = etree.SubElement(e_elem, 'thickness')
             e_thick.text = ','.join( [str(e.thickness)]*len(e) )
+
+
+    # Loadcurves must be processed before constraints, but the LoadData element
+    # comes later in the feb file.  Create the element here, then append later.
+    e_loaddata = etree.Element('LoadData')
+    loadcurve_ids = dict()
+    # FIXME: Includes loadcurve_zero, which is typically not necessary (but how
+    # do you know for certain?)
+    # FIXME: FEBio's behaviour with step interpolation is weird.  Possibly
+    # translate values to use a more sane form of step interpolation.
+    # TODO: A loadcurve is needed to set must points.  This will probably
+    # involve having some kind of must point object taking a loadcurve.
+    for i,lc in enumerate(self.get_loadcurves()):
+        lcid = str(i+1)
+        loadcurve_ids[lc] = lcid
+        e_loadcurve = etree.SubElement( e_loaddata, 'loadcurve',
+            {'id': lcid,
+            'type': loadcurve_interp_map[lc.interpolation],
+            'extend': loadcurve_extrap_map[lc.extrapolation]} )
+        for time in sorted(lc.points.iterkeys()):
+            e_loadpoint = etree.SubElement(e_loadcurve, 'loadpoint')
+            e_loadpoint.text = '%s,%s' % (time, lc.points[time])
+
+    # TODO: Apply constraints on nodes and rigid bodies.
+    e_boundary = etree.SubElement(e_root, 'Boundary')
+    for node,nid in node_ids.iteritems():
+        pass
+
+    e_constraints = etree.SubElement(e_root, 'Constraints')
+
+    # After Constraints element, insert LoadData element.
+    e_root.append(e_loaddata)
+
+    # TODO: Steps
 
 
     etree.ElementTree(e_root).write(file_name_or_obj, encoding='UTF-8')

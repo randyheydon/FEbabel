@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os
 from itertools import chain
 
-from . import geometry as geo, materials as mat
+from . import geometry as geo, materials as mat, constraints as con
 
 
 class FEproblem(object):
@@ -33,6 +33,37 @@ class FEproblem(object):
         materials.update( e.material for e in self.get_elements() )
         materials.discard(None)
         return materials
+
+    def get_constrainables(self):
+        "Returns the set of all constrainable objects."
+        # TODO: Search each set directly for constrainables?
+        constrainable = set()
+        for c in chain(self.get_nodes(), self.get_elements(), self.get_materials()):
+            if isinstance(c, con.Constrainable):
+                constrainable.add(c)
+        return constrainable
+
+    def get_constraints(self):
+        """Returns all constraints applied to constrainable objects.
+        Does not include None."""
+        # TODO: Search each set directly for constraints?
+        constraints = set()
+        for constrainable in self.get_constrainables():
+            constraints.update( c for c in y.constraints.values()
+                if isinstance(c, con.Constraint) )
+        return constraints
+
+    def get_loadcurves(self):
+        "Returns all loadcurves applied to constraints."
+        # TODO: Search each set directly for loadcurves?
+        loadcurves = set()
+        for cons in self.get_constraints():
+            if isinstance(cons, con.Switch):
+                loadcurves.update( x.loadcurve for x in
+                    cons.points.itervalues() if isinstance(x, con.Constraint) )
+            else:
+                loadcurves.add(cons.loadcurve)
+        return loadcurves
 
 
     def read(self, filename):
