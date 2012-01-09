@@ -1,9 +1,9 @@
-from .constraints import Constrainable
+from .common import Base, Constrainable
 # FIXME: Density belongs in every material.
 
 
 
-class Material(object):
+class Material(Base):
     "Base material object."
 
     def _store(self, params):
@@ -46,7 +46,7 @@ class Ogden(Material):
     def __init__(self, ci, mi, k):
         self._store(locals())
 
-class Rigid(Material, Constrainable):
+class Rigid(Constrainable, Material):
     # TODO: FEBio has E and v for "auto-penalty contact formulation".  Need?
     def __init__(self, center_of_mass=None, density=None):
         Constrainable.__init__(self, 'x','y','z','Rx','Ry','Rz')
@@ -55,44 +55,42 @@ class Rigid(Material, Constrainable):
 # Transversely isotropic materials.
 class TransIsoElastic(Material):
     "Adds fibers to a (hyper)elastic base material."
-    def __init__(self, c3, c4, c5, lam_max, axis_func, base):
+    def __init__(self, c3, c4, c5, lam_max, axis, base):
         self._store(locals())
+    def get_children(self):
+        return set([self.base, self.axis])
 
 # Orthotropic materials.
 class OrthoMaterial(Material):
     """Base class for orthotropic materials, not including iso or trans-iso
     materials."""
+    def get_children(self):
+        return set([self.axis])
 
 class LinearOrthotropic(OrthoMaterial):
-    def __init__(self, E1, E2, E3, G12, G23, G31, v12, v23, v31, axis_func):
+    def __init__(self, E1, E2, E3, G12, G23, G31, v12, v23, v31, axis):
         self._store(locals())
 
 class FungOrthotropic(OrthoMaterial):
-    def __init__(self, E1, E2, E3, G12, G23, G31, v12, v23, v31, c, k, axis_func):
+    def __init__(self, E1, E2, E3, G12, G23, G31, v12, v23, v31, c, k, axis):
         self._store(locals())
 
 
 
-class AxisOrientation(object):
-    """Base class for special material axis orientation objects.
+class AxisOrientation(Base):
+    """Base class for material axis orientation objects.
 
-    Axes are defined by callable objects.  The call should take a single
+    Axes require a get_at_element method.  The method should take a single
     Element object, and return a set of three mutually-orthogonal unit vectors
     describing the orientation of the material axes within the given Element.
 
-    Arbitrary callable objects can be used for axis orientation; special
-    objects are used to identify special cases that solvers may have built-in."""
-
-    def __init__(self, pos1, pos2):
-        p = iter(pos1)
-        self.pos1 = [p.next(), p.next(), p.next()]
-        p = iter(pos2)
-        self.pos2 = [p.next(), p.next(), p.next()]
+    All Axes should make use of the AxisOrientation._normalize static method to
+    easily convert two vectors into three mutually-orthogonal unit vectors."""
 
     @staticmethod
     def _normalize(v1, v2):
-        """Takes two vectors and returns three normalized unit vectors
-        describing the corresponding axes.
+        """Takes two non-parallel vectors and returns three normalized unit
+        vectors describing the corresponding axes.
         e1 = v1 / abs(v1), e2 = e3 x e1, e3 = (v1 x v2) / abs(v1 x v2)"""
         # All to avoid a numpy dependency...
         from math import sqrt
@@ -121,16 +119,30 @@ class VectorOrientation(AxisOrientation):
     pos1 gives the primary axis, while pos2 indicates the direction of the
     secondary axis in the form:
     e1 = pos1 / abs(pos1), e2 = e3 x e1, e3 = (pos1 x pos2) / abs(pos1 x pos2)"""
-    def __call__(self, element):
+    def __init__(self, pos1, pos2):
+        p = iter(pos1)
+        self.pos1 = [p.next(), p.next(), p.next()]
+        p = iter(pos2)
+        self.pos2 = [p.next(), p.next(), p.next()]
+
+    def get_at_element(self, element):
         return self._normalize(self.pos1, self.pos2)
 
 class SphericalOrientation(AxisOrientation):
     """Gives primary material axes radiating outward from a central point.
     pos1 is the location of the central point.  pos2 is a vector indicating the
     direction of the secondary axis."""
-    def __call__(self, element):
-        v1 = [ e - p for e,p in zip(element.get_vertex_avg(), self.pos1) ]
+    def __init__(self, pos1, pos2):
+        p = iter(pos1)
+        self.pos1 = [p.next(), p.next(), p.next()]
+        p = iter(pos2)
+        self.pos2 = [p.next(), p.next(), p.next()]
+
+    def get_at_pos(self, pos):
+        v1 = [ e - p for e,p in zip(pos, self.pos1) ]
         return self._normalize(v1, self.pos2)
+    def get_at_element(self, element):
+        return self.get_at_pos(element.get_vertex_avg())
 
 class NodalOrientation(AxisOrientation):
     """Gives axes based on the positions of an Element's Nodes.
@@ -146,7 +158,7 @@ class NodalOrientation(AxisOrientation):
         self.edge2 = [p.next(), p.next()]
         # NOTE: Orthotropic materials in FEBio expect edge1[0] == edge2[0].
 
-    def __call__(self, element):
+    def get_at_element(self, element):
         v1 = [ element[ self.edge1[1] ][i] - element[ self.edge1[0] ][i]
             for i in xrange(3) ]
         v2 = [ element[ self.edge2[1] ][i] - element[ self.edge2[0] ][i]

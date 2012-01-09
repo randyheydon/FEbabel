@@ -2,15 +2,19 @@ from __future__ import with_statement
 import os
 from itertools import chain
 
+from .common import Base, Constrainable
 from . import geometry as geo, materials as mat, constraints as con
 
 
-class FEproblem(object):
+class FEproblem(Base):
     """A class to contain an entire finite element problem description."""
 
     def __init__(self):
         self.options = dict()
         self.sets = dict()
+
+    def get_children(self):
+        return set(chain( *self.sets.values() ))
 
 
     def get_nodes(self):
@@ -39,7 +43,7 @@ class FEproblem(object):
         # TODO: Search each set directly for constrainables?
         constrainable = set()
         for c in chain(self.get_nodes(), self.get_elements(), self.get_materials()):
-            if isinstance(c, con.Constrainable):
+            if isinstance(c, Constrainable):
                 constrainable.add(c)
         return constrainable
 
@@ -49,7 +53,7 @@ class FEproblem(object):
         # TODO: Search each set directly for constraints?
         constraints = set()
         for constrainable in self.get_constrainables():
-            constraints.update( c for c in y.constraints.values()
+            constraints.update( c for c in constrainable.constraints.values()
                 if isinstance(c, con.Constraint) )
         return constraints
 

@@ -1,4 +1,4 @@
-from .constraints import Constrainable
+from .common import Base, Constrainable
 
 class Node(Constrainable):
     """A single point in three-dimensional Cartesian space.
@@ -56,7 +56,7 @@ class Node(Constrainable):
 
 
 
-class Element(object):
+class Element(Base):
     """Base class for all different element types.
     Note that subclasses should define n_nodes, the number of nodes required by
     the particular element."""
@@ -75,6 +75,12 @@ class Element(object):
         n = iter(nodes)
         self._nodes = [ n.next() for i in xrange(self.n_nodes) ]
         self.material = material
+
+    def get_children(self):
+        s = set(self._nodes)
+        s.add(self.material)
+        s.discard(None)
+        return s
 
 
     # Mathematical properties of the element.

@@ -1,40 +1,8 @@
-class Constrainable(object):
-    """A mixin to allow different object types to accept constraints on each of
-    its degrees of freedom."""
-
-    __slots__ = ['constraints']
-
-    def __init__(self, *degrees_of_freedom):
-        self.constraints = dict( (i,None) for i in degrees_of_freedom )
-        # TODO: Prevent new DOFs from being added after the fact.
+from .common import Base, Switch
 
 
 
-class Switch(object):
-    """A mixin to help create a container for other objects that can be activated
-    or deactivated at specific times.
-
-    points is a dict with numeric keys and values.  Each key represents a time,
-    while its corresponding value represents the object activating at that
-    time."""
-
-    def __init__(self, points):
-        self.points = points
-
-    def get_active(self, time):
-        """Find which contained object is active at the specified time.
-        If the specified time is before the earliest specified time, None is
-        returned."""
-        # Iterate backwards through all given times to find the most recent.
-        for t in sorted(self.points.iterkeys(), reverse=True):
-            if t <= time:
-                return self.points[t]
-        return None
-
-
-
-
-class LoadCurve(object):
+class LoadCurve(Base):
     """Defines how a constraint (load, displacement, etc.) varies with time.
 
     points is a dict with numeric keys and values.  Each key represents a time,
@@ -58,6 +26,15 @@ class LoadCurve(object):
         self.points = points
         self.interpolation = interpolation
         self.extrapolation = extrapolation
+
+
+    # For more convenient read/write access to the points dictionary.
+    def __getitem__(self, x):
+        return self.points[x]
+
+    def __setitem__(self, x, y):
+        self.points[x] = y
+
 
     # TODO: Call object with a specific time to receive the loadcurve's value
     # at that time.
@@ -96,16 +73,20 @@ loadcurve_ramp = LoadCurve({0:0, 1:1})
 
 
 
-class Constraint(object):
+class Constraint(Base):
     "Base class for different types of constraints/loads."
 
     def __init__(self, loadcurve, multiplier=1):
         self.multiplier = multiplier
         self.loadcurve = loadcurve
 
+    def get_children(self):
+        return set([self.loadcurve])
+
 
 class Force(Constraint): pass
 class Displacement(Constraint): pass
+# FIXME: Single instance of Fixed (and Free?)
 class Fixed(Displacement):
     def __init__(self):
         Displacement.__init__(self, loadcurve_zero, 0)
@@ -118,12 +99,16 @@ class SwitchConstraint(Switch, Constraint):
 
 
 
-class Contact(object):
+class Contact(Base):
     """Defines a contact interface between two surface sets."""
 
     def __init__(self, master, slave):
         self.master = master
         self.slave = slave
+
+    def get_children(self):
+        # TODO, once API is settled here.
+        pass
 
 
 class SwitchContact(Switch, Contact):

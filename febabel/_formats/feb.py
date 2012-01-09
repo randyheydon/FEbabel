@@ -82,10 +82,10 @@ mat.Rigid._params_feb = _params_feb_Rigid
 # base material must be added to its own parameters.
 def _params_feb_TransIso(self):
     d = mat.Material._params_feb(self)
-    del d['base'], d['axis_func']
+    del d['base'], d['axis']
     d.update(self.base._params_feb())
 
-    ax = self.axis_func
+    ax = self.axis
     if isinstance(ax, mat.VectorOrientation):
         d['fiber'] = ( 'vector', ','.join(map(str,ax.pos1)) )
     elif isinstance(ax, mat.SphericalOrientation):
@@ -100,9 +100,9 @@ mat.TransIsoElastic._params_feb = _params_feb_TransIso
 
 def _params_Ortho(self):
     d = mat.Material._params_feb(self)
-    del d['axis_func']
+    del d['axis']
 
-    ax = self.axis_func
+    ax = self.axis
     if isinstance(ax, mat.VectorOrientation):
         d['mat_axis'] = ( 'vector',
             {'a':','.join(map(str, ax.pos1)),
@@ -199,7 +199,7 @@ def write(self, file_name_or_obj):
         e_elem = etree.SubElement(e_elemdata, 'element', {'id':elem_ids[e]})
         if e.material in matl_user_orient:
             e_fiber = etree.SubElement(e_elem, 'fiber')
-            e_fiber.text = ','.join(map(str,e.material.axis_func(e)[0]))
+            e_fiber.text = ','.join(map(str,e.material.axis.get_at_element(e)[0]))
         if isinstance(e, geo.ShellElement):
             # TODO: Per-node thickness.  Currently forces constant thickness
             # throughout shell.

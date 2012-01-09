@@ -25,7 +25,7 @@ class TestFeb(unittest.TestCase):
         Node = f.geometry.Node
         matl1 = f.materials.Ogden([1,2,3,4,5,6,7],[8,9,10,11,12,13,14], 2.2)
         matl2 = f.materials.TransIsoElastic(15,16,17,18,
-            axis_func=f.materials.SphericalOrientation((0,0,0),(0,0,1)),
+            axis=f.materials.SphericalOrientation((0,0,0),(0,0,1)),
             base=f.materials.VerondaWestmann(19,20,21),
         )
         nodes = [
@@ -91,6 +91,13 @@ class TestFeb(unittest.TestCase):
         p = f.problem.FEproblem()
         nodes = list(map( f.geometry.Node, [(0,0,0), (1,0,0), (0,1,0), (0,0,1)] ))
         mat = f.materials
+
+        class NewOrient(mat.AxisOrientation):
+            def get_at_element(self, element):
+                # NOTE: Any AxisOrientation should call the _normalize method.
+                # I only skip it here for ease of testing.  Don't do this!
+                return (element.get_vertex_avg(), [0,1,0], [0,0,1])
+
         materials = [
             mat.NeoHookean(1,2),
             mat.MooneyRivlin(3,4,5),
@@ -103,7 +110,7 @@ class TestFeb(unittest.TestCase):
             mat.FungOrthotropic(32,33,34,35,36,37,38,39,40,41,42,
                 mat.VectorOrientation((0,0,1),(1,0,1))),
             mat.TransIsoElastic(43,44,45,46,
-                lambda e: (e.get_vertex_avg(), [0,1,0], [0,0,1]),
+                NewOrient(),
                 mat.VerondaWestmann(47,48,49)),
         ]
         # Create element for each material.

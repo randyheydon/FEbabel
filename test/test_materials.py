@@ -73,32 +73,40 @@ class TestAxes(unittest.TestCase):
 
 
     def test_vector_orientation(self):
-        self.assertEqual( m.VectorOrientation([1,0,0],[0,1,0])(self.elements[0]),
+        self.assertEqual(
+            m.VectorOrientation([1,0,0],[0,1,0]).get_at_element(self.elements[0]),
             ([1,0,0],[0,1,0],[0,0,1]) )
-        self.assertEqual( m.VectorOrientation([1,0,0],[0.234,1,0])(self.elements[0]),
+        self.assertEqual(
+            m.VectorOrientation([1,0,0],[0.234,1,0]).get_at_element(self.elements[0]),
             ([1,0,0],[0,1,0],[0,0,1]) )
-        self.assertEqual( m.VectorOrientation([3,4,0],[3,4,1])(self.elements[0]),
+        self.assertEqual(
+            m.VectorOrientation([3,4,0],[3,4,1]).get_at_element(self.elements[0]),
             ([0.6, 0.8, 0], [0,0,1], [0.8, -0.6, 0]) )
 
 
     def test_spherical_orientation(self):
-        self.assertEqual( m.SphericalOrientation([0,0,0],[0,0,1])(self.elements[1]),
+        self.assertEqual(
+            m.SphericalOrientation([0,0,0],[0,0,1]).get_at_element(self.elements[1]),
             ([0, 0.8, 0.6], [0, -0.6, 0.8], [1,0,0]) )
         # Imprecision in the floats makes standard equality fail here.
         self.assertArrayAlmostEqual(
-            m.SphericalOrientation([0,0,0],[0,0,1])(self.elements[0]),
+            m.SphericalOrientation([0,0,0],[0,0,1]).get_at_element(self.elements[0]),
             ([1/sqrt(3), 1/sqrt(3), 1/sqrt(3)], [-1/sqrt(6), -1/sqrt(6), sqrt(2.0/3)],
                 [1/sqrt(2), -1/sqrt(2), 0]) )
 
 
     def test_nodal_orientation(self):
-        self.assertEqual( m.NodalOrientation((0,1),(0,3))(self.elements[0]),
+        self.assertEqual(
+            m.NodalOrientation((0,1),(0,3)).get_at_element(self.elements[0]),
             ([1,0,0],[0,1,0],[0,0,1]) )
-        self.assertEqual( m.NodalOrientation((0,1),(0,2))(self.elements[0]),
+        self.assertEqual(
+            m.NodalOrientation((0,1),(0,2)).get_at_element(self.elements[0]),
             ([1,0,0],[0,1,0],[0,0,1]) )
-        self.assertEqual( m.NodalOrientation((0,1),(1,2))(self.elements[0]),
+        self.assertEqual(
+            m.NodalOrientation((0,1),(1,2)).get_at_element(self.elements[0]),
             ([1,0,0],[0,1,0],[0,0,1]) )
-        self.assertEqual( m.NodalOrientation((0,1),(0,4))(self.elements[0]),
+        self.assertEqual(
+            m.NodalOrientation((0,1),(0,4)).get_at_element(self.elements[0]),
             ([1,0,0],[0,0,1],[0,-1,0]) )
 
 
