@@ -12,6 +12,7 @@ class TestFEproblem(unittest.TestCase):
 
 
     def test_descendants(self):
+        # Create a problem.
         p = f.problem.FEproblem()
         matl1 = f.materials.Ogden([1,2,3,4,5,6,7],[8,9,10,11,12,13,14], 2.2)
         matl2 = f.materials.TransIsoElastic(15,16,17,18,
@@ -27,10 +28,26 @@ class TestFEproblem(unittest.TestCase):
         p.sets[''] = set((
             f.geometry.Hex8(nodes[0:8], matl1),
             f.geometry.Hex8(nodes[4:12], matl2) ))
+        # TODO: Add in some constraints.
+
+        # Test descendants are found correctly.
+        children = p.get_children()
+        self.assertEqual(len(children), 2)
+        for i in children:
+            self.assertTrue(isinstance(i, f.geometry.Element))
 
         desc = p.get_descendants()
         # 2 Elements, 12 Nodes, 3 Materials (1 base), 1 AxisOrientation.
         self.assertEqual(len(desc), 2 + 12 + 3 + 1)
+
+        desc_s = p.get_descendants_sorted()
+        self.assertEqual(len(desc_s[f.geometry.Element]), 2)
+        self.assertEqual(len(desc_s[f.geometry.Node]), 12)
+        self.assertEqual(len(desc_s[f.materials.Material]), 3)
+        self.assertEqual(len(desc_s[f.common.Constrainable]), 12)
+        self.assertEqual(len(desc_s[f.constraints.LoadCurve]), 0)
+        self.assertEqual(len(desc_s[f.common.Switch]), 0)
+        self.assertEqual(len(desc_s[None]), 1)
 
 
 

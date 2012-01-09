@@ -6,7 +6,7 @@ Supports .feb version 1.1.
 
 from warnings import warn
 
-from .. import geometry as geo, materials as mat, constraints as con, problem
+from .. import geometry as geo, materials as mat, constraints as con, problem, common
 
 
 # Data for converting internal objects to FEBio's form.
@@ -123,6 +123,8 @@ def write(self, file_name_or_obj):
 
     import xml.etree.ElementTree as etree
 
+    descendants = self.get_descendants_sorted()
+
     e_root = etree.Element('febio_spec',
         {'version': '1.1'})
 
@@ -136,10 +138,17 @@ def write(self, file_name_or_obj):
     # Set of materials requiring per-element orientation data in ElementData.
     matl_user_orient = set()
 
-    for i,m in enumerate(self.get_materials()):
+    # TransIsoElastic materials are not treated as wrappers in FEBio, so don't
+    # add their base materials to FEBio's list.
+    top_materials = set(descendants[mat.Material])
+    for m in descendants[mat.Material]:
+        if isinstance(m, mat.TransIsoElastic):
+            top_materials.discard(m.base)
+
+    for i,m in enumerate(top_materials):
         mid = str(i+1)
-        # TODO: Some materials will have submaterials that need their own id
-        # numbers that then throw off the count for others, so fix that.
+        # TODO: Some materials will have submaterials.  These will need to be
+        # created first (maybe?), then referenced by the wrapper material.
         matl_ids[m] = mid
 
         # Create matl, set its name and ID number.
@@ -175,7 +184,7 @@ def write(self, file_name_or_obj):
     # Write out all nodes.  In the process, store the ID of each in a
     # dictionary indexed by node object for fast retrieval later.
     e_nodes = etree.SubElement(e_geometry, 'Nodes')
-    for i,n in enumerate(self.get_nodes()):
+    for i,n in enumerate(descendants[geo.Node]):
         nid = str(i+1)
         e_node = etree.SubElement(e_nodes, 'node', {'id':nid})
         e_node.text = ','.join( map(str,iter(n)) )
@@ -183,7 +192,7 @@ def write(self, file_name_or_obj):
 
     e_elements = etree.SubElement(e_geometry, 'Elements')
     # Get list of only those elements that FEBio lists in the Elements section.
-    elements = [ e for e in self.get_elements()
+    elements = [ e for e in descendants[geo.Element]
         if isinstance(e, (geo.SolidElement, geo.ShellElement)) ]
     for i,e in enumerate(elements):
         eid = str(i+1)
@@ -193,7 +202,7 @@ def write(self, file_name_or_obj):
         e_elem.text = ','.join( node_ids[n] for n in iter(e) )
 
     e_elemdata = etree.SubElement(e_geometry, 'ElementData')
-    for e in ( e for e in self.get_elements()
+    for e in ( e for e in descendants[geo.Element]
         if isinstance(e, geo.ShellElement) or e.material in matl_user_orient ):
 
         e_elem = etree.SubElement(e_elemdata, 'element', {'id':elem_ids[e]})
@@ -217,7 +226,7 @@ def write(self, file_name_or_obj):
     # translate values to use a more sane form of step interpolation.
     # TODO: A loadcurve is needed to set must points.  This will probably
     # involve having some kind of must point object taking a loadcurve.
-    for i,lc in enumerate(self.get_loadcurves()):
+    for i,lc in enumerate(descendants[con.LoadCurve]):
         lcid = str(i+1)
         loadcurve_ids[lc] = lcid
         e_loadcurve = etree.SubElement( e_loaddata, 'loadcurve',

@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os
 from itertools import chain
 
-from .common import Base, Constrainable
+from .common import Base, Constrainable, Switch
 from . import geometry as geo, materials as mat, constraints as con
 
 
@@ -17,57 +17,35 @@ class FEproblem(Base):
         return set(chain( *self.sets.values() ))
 
 
-    def get_nodes(self):
-        "Returns the set of all nodes found in sets and elements."
-        nodes = set( x for x in chain(*self.sets.values())
-            if isinstance(x, geo.Node) )
-        for e in self.get_elements():
-            nodes.update(iter(e))
-        return nodes
+    # FIXME: Maybe this should be a method of Base?
+    def get_descendants_sorted(self):
+        """Returns all descendants, sorted into a dictionary by type.
+        Descendants can by placed under multiple types (eg. Nodes will also end
+        up in Constrainables).
+        If a descendant is not any of the sorted types, it will be placed under
+        None."""
 
-    def get_elements(self):
-        "Returns the set of all elements found in the problem's sets."
-        return set( x for x in chain(*self.sets.values())
-            if isinstance(x, geo.Element) )
+        ds = {
+            geo.Node: set(),
+            geo.Element: set(),
+            mat.Material: set(),
+            Constrainable: set(),
+            con.Constraint: set(),
+            con.LoadCurve: set(),
+            Switch: set(),
+            None: set()
+        }
 
-    def get_materials(self):
-        "Returns the set of all materials found in sets and elements."
-        materials = set( x for x in chain(*self.sets.values())
-            if isinstance(x, mat.Material) )
-        materials.update( e.material for e in self.get_elements() )
-        materials.discard(None)
-        return materials
+        for x in self.get_descendants():
+            placed = False
+            for cls,st in ds.iteritems():
+                if cls is not None and isinstance(x, cls):
+                   st.add(x)
+                   placed = True
+            if not placed:
+                ds[None].add(x)
 
-    def get_constrainables(self):
-        "Returns the set of all constrainable objects."
-        # TODO: Search each set directly for constrainables?
-        constrainable = set()
-        for c in chain(self.get_nodes(), self.get_elements(), self.get_materials()):
-            if isinstance(c, Constrainable):
-                constrainable.add(c)
-        return constrainable
-
-    def get_constraints(self):
-        """Returns all constraints applied to constrainable objects.
-        Does not include None."""
-        # TODO: Search each set directly for constraints?
-        constraints = set()
-        for constrainable in self.get_constrainables():
-            constraints.update( c for c in constrainable.constraints.values()
-                if isinstance(c, con.Constraint) )
-        return constraints
-
-    def get_loadcurves(self):
-        "Returns all loadcurves applied to constraints."
-        # TODO: Search each set directly for loadcurves?
-        loadcurves = set()
-        for cons in self.get_constraints():
-            if isinstance(cons, con.Switch):
-                loadcurves.update( x.loadcurve for x in
-                    cons.points.itervalues() if isinstance(x, con.Constraint) )
-            else:
-                loadcurves.add(cons.loadcurve)
-        return loadcurves
+        return ds
 
 
     def read(self, filename):
