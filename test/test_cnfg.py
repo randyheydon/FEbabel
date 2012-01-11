@@ -24,7 +24,8 @@ class TestCnfg(unittest.TestCase):
         self.assertEqual(len(p.sets['tf_joint.inp:allnodes']), 96853)
         self.assertEqual(len(p.sets['tf_joint.inp:allelements']), 81653)
 
-        self.assertEqual(len(p.get_materials()), 15)
+        descendants = p.get_descendants_sorted()
+        self.assertEqual(len(descendants[f.materials.Material]), 15+5)
 
         # Find each material in the elements of its corresponding set.
         # Ensure all elements in the set have the same material, then test it.
