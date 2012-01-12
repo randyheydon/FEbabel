@@ -13,9 +13,8 @@ class Base(object):
     this means that it should be safe to call get_children recursively on all
     children, sub-children, etc., without causing an infinite loop.
     
-    The get_descendants method is also required, but will likely not need to be
-    overridden by subclasses.  It returns a set containing all of the object's
-    children, grandchildren, etc."""
+    The get_descendants and get_descendants_sorted methods are also required,
+    but will likely not need to be overridden by subclasses."""
 
     __slots__ = []
 
@@ -24,6 +23,9 @@ class Base(object):
 
 
     def get_descendants(self):
+        """Returns the set of all of the object's descendants, including its
+        children, grandchildren, etcetera."""
+
         children = self.get_children()
         if children is None:
             return set()
@@ -33,6 +35,35 @@ class Base(object):
             descendants.update(child.get_descendants())
 
         return descendants
+
+
+    def get_descendants_sorted(self):
+        """Returns all descendants, sorted into a dictionary by type.
+        Descendants can by placed under multiple types (eg. Nodes will also end
+        up in Constrainables).
+        If a descendant is not any of the sorted types, it will be placed under
+        None."""
+
+        ds = {
+            f.geometry.Node: set(),
+            f.geometry.Element: set(),
+            f.materials.Material: set(),
+            f.constraints.LoadCurve: set(),
+            Constrainable: set(),
+            Switch: set(),
+            None: set()
+        }
+
+        for x in self.get_descendants():
+            placed = False
+            for cls,st in ds.iteritems():
+                if cls is not None and isinstance(x, cls):
+                   st.add(x)
+                   placed = True
+            if not placed:
+                ds[None].add(x)
+
+        return ds
 
 
 

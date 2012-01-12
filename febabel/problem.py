@@ -17,36 +17,6 @@ class FEproblem(Base):
         return set(chain( *self.sets.values() ))
 
 
-    # FIXME: Maybe this should be a method of Base?
-    def get_descendants_sorted(self):
-        """Returns all descendants, sorted into a dictionary by type.
-        Descendants can by placed under multiple types (eg. Nodes will also end
-        up in Constrainables).
-        If a descendant is not any of the sorted types, it will be placed under
-        None."""
-
-        ds = {
-            geo.Node: set(),
-            geo.Element: set(),
-            mat.Material: set(),
-            Constrainable: set(),
-            con.LoadCurve: set(),
-            Switch: set(),
-            None: set()
-        }
-
-        for x in self.get_descendants():
-            placed = False
-            for cls,st in ds.iteritems():
-                if cls is not None and isinstance(x, cls):
-                   st.add(x)
-                   placed = True
-            if not placed:
-                ds[None].add(x)
-
-        return ds
-
-
     def read(self, filename):
         """Convenience function to run the appropriate reader method.
         Currently guesses based on file extension."""
