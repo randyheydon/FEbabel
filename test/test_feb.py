@@ -20,6 +20,7 @@ class TestFeb(unittest.TestCase):
     # TODO: Test shell elements and their ElementData.
 
 
+
     def test_write_feb(self):
         p = f.problem.FEproblem()
         Node = f.geometry.Node
@@ -85,6 +86,10 @@ class TestFeb(unittest.TestCase):
         e0 = elements[0].get('mat')
         e1 = elements[1].get('mat')
         self.assertTrue( (e0=='1' and e1=='2') or (e1=='1' and e0=='2') )
+
+        # Confirm empty Boundary element has been removed.
+        self.assertTrue(tree.find('Boundary') is None)
+
 
 
     def test_write_feb_materials(self):
@@ -203,7 +208,68 @@ class TestFeb(unittest.TestCase):
         elemdat = tree.find('Geometry').find('ElementData').findall('element')
         self.assertEqual(len(elemdat), 2)
         for e in elemdat:
-            self.assertEqual(e.find('fiber').text, '0.25,0.25,0.25') 
+            self.assertEqual(e.find('fiber').text, '0.25,0.25,0.25')
+
+
+
+    def test_write_feb_constraints(self):
+        p = f.problem.FEproblem()
+        # x coordinates in increasing order to make it easy to find node elements.
+        nodes = list(map( f.geometry.Node, [(0,7,0), (1,2,0), (2,1,3), (3,0,1)] ))
+        mat = f.materials.Rigid(center_of_mass=(0,0,0))
+        p.sets[''] = set([ f.geometry.Tet4(nodes, mat) ])
+
+        con = f.constraints
+        lc = con.LoadCurve({0:0, 1:0.7, 2:1})
+        nodes[0].constraints['x'] = con.Displacement(lc, 3.9)
+        nodes[0].constraints['y'] = con.Displacement(con.loadcurve_ramp, 3.8)
+        nodes[2].constraints['y'] = con.Force(con.loadcurve_constant, 8.2)
+        nodes[3].constraints['z'] = con.fixed
+        mat.constraints['Rz'] = con.Force(lc, 122.2)
+
+        outfile = StringIO()
+        p.write_feb(outfile)
+        tree = etree.fromstring(outfile.getvalue())
+
+        # Match node elements to existing Node objects.
+        node_ids = [e.get('id') for e in sorted(
+            tree.find('Geometry').find('Nodes').findall('node'),
+            key=lambda e: e.text )]
+        e_boundary = tree.find('Boundary')
+
+        pres = list(e_boundary.find('prescribe'))
+        self.assertEqual(len(pres), 2)
+        x,y = pres if pres[0].text == '3.9' else (pres[1], pres[0])
+        self.assertEqual(x.get('id'), node_ids[0])
+        self.assertEqual(x.get('bc'), 'x')
+        lcid = x.get('lc') # ID of the shared loadcurve.
+        self.assertEqual(x.text, '3.9')
+        self.assertEqual(y.get('id'), node_ids[0])
+        self.assertEqual(y.get('bc'), 'y')
+        self.assertTrue(y.get('lc') != lcid)
+
+        fix = list(e_boundary.find('fix'))
+        self.assertEqual(len(fix), 1)
+        self.assertEqual(fix[0].get('id'), node_ids[3])
+        self.assertEqual(fix[0].get('bc'), 'z')
+
+        force = list(e_boundary.find('force'))
+        self.assertEqual(len(force), 1)
+        self.assertEqual(force[0].get('id'), node_ids[2])
+        self.assertEqual(force[0].get('bc'), 'y')
+        self.assertTrue(force[0].get('lc') != lcid)
+        self.assertTrue(force[0].get('lc') != y.get('lc'))
+        self.assertEqual(force[0].text, '8.2')
+
+        rigid = tree.find('Constraints').findall('rigid_body')
+        self.assertEqual(len(rigid), 1)
+        self.assertEqual(rigid[0].get('mat'), '1') # Only one material.
+        for dof in ('trans_x','trans_y','trans_z','rot_x','rot_y'):
+            self.assertTrue(rigid[0].find(dof) is None)
+        rz = rigid[0].find('rot_z')
+        self.assertEqual(rz.get('type'), 'force')
+        self.assertEqual(rz.get('lc'), lcid)
+        self.assertEqual(rz.text, '122.2')
 
 
 

@@ -237,11 +237,43 @@ def write(self, file_name_or_obj):
             e_loadpoint = etree.SubElement(e_loadcurve, 'loadpoint')
             e_loadpoint.text = '%s,%s' % (time, lc.points[time])
 
-    # TODO: Apply constraints on nodes and rigid bodies.
-    e_boundary = etree.SubElement(e_root, 'Boundary')
-    for node,nid in node_ids.iteritems():
-        pass
 
+    # Apply constraints on nodes.
+    e_boundary = etree.SubElement(e_root, 'Boundary')
+
+    e_prescribe = etree.SubElement(e_boundary, 'prescribe')
+    e_fix = etree.SubElement(e_boundary, 'fix')
+    e_force = etree.SubElement(e_boundary, 'force')
+    # TODO: All boundary conditions related to surfaces (pressure, flux, etc.)
+
+    for node,nid in node_ids.iteritems():
+        for dof,constraint in node.constraints.iteritems():
+            if constraint is con.free:
+                continue
+            elif constraint is con.fixed:
+                etree.SubElement(e_fix, 'node', {'id':nid, 'bc':dof})
+            elif isinstance(constraint, con.Displacement):
+                e = etree.SubElement(e_prescribe, 'node', {'id':nid, 'bc':dof,
+                    'lc':loadcurve_ids[constraint.loadcurve]})
+                e.text = repr(constraint.multiplier)
+            elif isinstance(constraint, con.Force):
+                e = etree.SubElement(e_force, 'node', {'id':nid, 'bc':dof,
+                    'lc':loadcurve_ids[constraint.loadcurve]})
+                e.text = repr(constraint.multiplier)
+            elif isinstance(constraint, con.SwitchConstraint):
+                pass # We'll deal with this farther down.
+            else:
+                warn("Don't recognize constraint on node.")
+
+    # Remove any sections that aren't needed.
+    for e in (e_prescribe, e_fix, e_force):
+        if len(e) == 0:
+            e_boundary.remove(e)
+    if len(e_boundary) == 0:
+        e_root.remove(e_boundary)
+
+
+    # Apply constraints on rigid bodies.
     e_constraints = etree.SubElement(e_root, 'Constraints')
 
     # After Constraints element, insert LoadData element.
