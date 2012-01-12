@@ -87,8 +87,9 @@ class TestFeb(unittest.TestCase):
         e1 = elements[1].get('mat')
         self.assertTrue( (e0=='1' and e1=='2') or (e1=='1' and e0=='2') )
 
-        # Confirm empty Boundary element has been removed.
+        # Confirm empty Boundary and Constraints elements have been removed.
         self.assertTrue(tree.find('Boundary') is None)
+        self.assertTrue(tree.find('Constraints') is None)
 
 
 
@@ -209,6 +210,10 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(len(elemdat), 2)
         for e in elemdat:
             self.assertEqual(e.find('fiber').text, '0.25,0.25,0.25')
+
+        # Confirm empty Boundary and Constraints elements have been removed.
+        self.assertTrue(tree.find('Boundary') is None)
+        self.assertTrue(tree.find('Constraints') is None)
 
 
 

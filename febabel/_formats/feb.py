@@ -304,6 +304,10 @@ def write(self, file_name_or_obj):
             else:
                 warn("Don't recognize constraint on rigid body.")
 
+        # Remove rigid body constraints section if not needed.
+        if len(e_rigid) == 0:
+            e_constraints.remove(e_rigid)
+
     # Remove Constraints section if not needed.
     if len(e_constraints) == 0:
         e_root.remove(e_constraints)
