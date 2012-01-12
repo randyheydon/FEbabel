@@ -220,10 +220,10 @@ class TestFeb(unittest.TestCase):
         p.sets[''] = set([ f.geometry.Tet4(nodes, mat) ])
 
         con = f.constraints
-        lc = con.LoadCurve({0:0, 1:0.7, 2:1})
-        nodes[0].constraints['x'] = con.Displacement(lc, 3.9)
+        lc = con.LoadCurve({0:0, 1:0.75, 2:1})
+        nodes[0].constraints['x'] = con.Displacement(lc, 4)
         nodes[0].constraints['y'] = con.Displacement(con.loadcurve_ramp, 3.8)
-        nodes[2].constraints['y'] = con.Force(con.loadcurve_constant, 8.2)
+        nodes[2].constraints['y'] = con.Force(con.loadcurve_constant, 8.25)
         nodes[3].constraints['z'] = con.fixed
         mat.constraints['Rz'] = con.Force(lc, 122.2)
 
@@ -239,11 +239,11 @@ class TestFeb(unittest.TestCase):
 
         pres = list(e_boundary.find('prescribe'))
         self.assertEqual(len(pres), 2)
-        x,y = pres if pres[0].text == '3.9' else (pres[1], pres[0])
+        x,y = pres if pres[0].text == '4' else (pres[1], pres[0])
         self.assertEqual(x.get('id'), node_ids[0])
         self.assertEqual(x.get('bc'), 'x')
         lcid = x.get('lc') # ID of the shared loadcurve.
-        self.assertEqual(x.text, '3.9')
+        self.assertEqual(x.text, '4')
         self.assertEqual(y.get('id'), node_ids[0])
         self.assertEqual(y.get('bc'), 'y')
         self.assertTrue(y.get('lc') != lcid)
@@ -259,7 +259,7 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(force[0].get('bc'), 'y')
         self.assertTrue(force[0].get('lc') != lcid)
         self.assertTrue(force[0].get('lc') != y.get('lc'))
-        self.assertEqual(force[0].text, '8.2')
+        self.assertEqual(force[0].text, '8.25')
 
         rigid = tree.find('Constraints').findall('rigid_body')
         self.assertEqual(len(rigid), 1)
@@ -270,6 +270,19 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(rz.get('type'), 'force')
         self.assertEqual(rz.get('lc'), lcid)
         self.assertEqual(rz.text, '122.2')
+
+        # Test loadcurves.
+        for lc in tree.find('LoadData').findall('loadcurve'):
+            # Let's only look at the shared one.
+            if lc.get('id') != lcid:
+                continue
+            self.assertEqual(lc.get('id'), lcid)
+            self.assertEqual(lc.get('type'), 'linear')
+            self.assertEqual(lc.get('extend'), 'constant')
+            pts = lc.findall('loadpoint')
+            self.assertEqual(pts[0].text, '0,0')
+            self.assertEqual(pts[1].text, '1,0.75')
+            self.assertEqual(pts[2].text, '2,1')
 
 
 

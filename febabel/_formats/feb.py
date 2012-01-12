@@ -249,7 +249,7 @@ def write(self, file_name_or_obj):
     for node,nid in node_ids.iteritems():
         for dof,constraint in node.constraints.iteritems():
             if constraint is con.free:
-                continue
+                pass
             elif constraint is con.fixed:
                 etree.SubElement(e_fix, 'node', {'id':nid, 'bc':dof})
             elif isinstance(constraint, con.Displacement):
@@ -276,8 +276,42 @@ def write(self, file_name_or_obj):
     # Apply constraints on rigid bodies.
     e_constraints = etree.SubElement(e_root, 'Constraints')
 
+    for matl,mid in matl_ids.iteritems():
+        if not isinstance(matl, common.Constrainable):
+            continue
+        e_rigid = etree.SubElement(e_constraints, 'rigid_body', {'mat':mid})
+
+        for dof,tag in zip(('x','y','z','Rx','Ry','Rz'),
+            ('trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z') ):
+
+            constraint = matl.constraints[dof]
+
+            if constraint is con.free or isinstance(
+                constraint, con.SwitchConstraint):
+                continue
+
+            e = etree.SubElement(e_rigid, tag)
+            if constraint is con.fixed:
+                e.set('type', 'fixed')
+            elif isinstance(constraint, con.Displacement):
+                e.set('type', 'prescribed')
+                e.set('lc', loadcurve_ids[constraint.loadcurve])
+                e.text = repr(constraint.multiplier)
+            elif isinstance(constraint, con.Force):
+                e.set('type', 'force')
+                e.set('lc', loadcurve_ids[constraint.loadcurve])
+                e.text = repr(constraint.multiplier)
+            else:
+                warn("Don't recognize constraint on rigid body.")
+
+    # Remove Constraints section if not needed.
+    if len(e_constraints) == 0:
+        e_root.remove(e_constraints)
+
+
     # After Constraints element, insert LoadData element.
     e_root.append(e_loaddata)
+
 
     # TODO: Steps
 
