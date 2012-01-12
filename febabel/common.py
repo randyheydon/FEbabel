@@ -1,4 +1,4 @@
-import febabel as f
+import febabel as feb
 
 
 
@@ -45,10 +45,10 @@ class Base(object):
         None."""
 
         ds = {
-            f.geometry.Node: set(),
-            f.geometry.Element: set(),
-            f.materials.Material: set(),
-            f.constraints.LoadCurve: set(),
+            feb.geometry.Node: set(),
+            feb.geometry.Element: set(),
+            feb.materials.Material: set(),
+            feb.constraints.LoadCurve: set(),
             Constrainable: set(),
             Switch: set(),
             None: set()
@@ -75,7 +75,8 @@ class Constrainable(Base):
     __slots__ = ['constraints']
 
     def __init__(self, *degrees_of_freedom):
-        self.constraints = dict( (i,f.constraints.free) for i in degrees_of_freedom )
+        free = feb.constraints.free
+        self.constraints = dict( (i,free) for i in degrees_of_freedom )
         # TODO: Prevent new DOFs from being added after the fact.
 
     def get_children(self):

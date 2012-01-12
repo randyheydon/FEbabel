@@ -1,9 +1,7 @@
-from __future__ import with_statement
 import os
 from itertools import chain
 
-from .common import Base, Constrainable, Switch
-from . import geometry as geo, materials as mat, constraints as con
+from .common import Base
 
 
 class FEproblem(Base):
