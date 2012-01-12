@@ -30,7 +30,6 @@ class FEproblem(Base):
             geo.Element: set(),
             mat.Material: set(),
             Constrainable: set(),
-            con.Constraint: set(),
             con.LoadCurve: set(),
             Switch: set(),
             None: set()

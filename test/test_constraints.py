@@ -15,7 +15,7 @@ class TestConstraint(unittest.TestCase):
     def test_init(self):
         force = con.Force(con.loadcurve_ramp, 75)
         disp = con.Displacement(con.LoadCurve({0:0, 0.5:50, 1:51}))
-        fix = con.Fixed()
+        fix = con.fixed
 
 
 
@@ -24,9 +24,9 @@ class TestSwitch(unittest.TestCase):
 
     def test_get_active(self):
         f1 = con.Displacement(con.loadcurve_ramp, -10)
-        f2 = con.Fixed()
+        f2 = con.fixed
         f3 = con.Force(con.loadcurve_constant, 100)
-        f4 = None
+        f4 = con.free
         s = con.SwitchConstraint({0:f1, 1:f2, 1.1:f3, 1.2:f4})
         self.assertTrue( s.get_active(-0.2) is None )
         self.assertTrue( s.get_active(0) is f1 )

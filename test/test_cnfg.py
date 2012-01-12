@@ -110,23 +110,21 @@ class TestCnfg(unittest.TestCase):
             self.assertEqual(m.base.k, 397)
 
         # Check that constraints are applied properly to the rigid bodies.
+        from febabel.constraints import free, fixed
         mtibia = list( p.sets['tf_joint.inp:tibia'] )[0].material
         self.assertTrue( isinstance(mtibia.constraints['Rx'],
             f.constraints.SwitchConstraint) )
         for dof in ('x','y','z','Rx','Ry','Rz'):
-            self.assertTrue( isinstance(mtibia.constraints[dof].points[0],
-                f.constraints.Fixed) )
+            self.assertEqual(mtibia.constraints[dof].points, {0:fixed})
 
         mfemur = list( p.sets['tf_joint.inp:femur'] )[0].material
         self.assertTrue( isinstance(mfemur.constraints['Rx'],
             f.constraints.SwitchConstraint) )
-        self.assertEqual(mfemur.constraints['x'].points, {0:None})
-        self.assertEqual(mfemur.constraints['y'].points, {0:None})
-        self.assertTrue( isinstance(mfemur.constraints['Rx'].points[0],
-            f.constraints.Fixed) )
-        self.assertEqual(mfemur.constraints['Ry'].points, {0:None})
-        self.assertTrue( isinstance(mfemur.constraints['Rz'].points[0],
-            f.constraints.Fixed) )
+        self.assertEqual(mfemur.constraints['x'].points, {0:free})
+        self.assertEqual(mfemur.constraints['y'].points, {0:free})
+        self.assertEqual(mfemur.constraints['Rx'].points, {0:fixed})
+        self.assertEqual(mfemur.constraints['Ry'].points, {0:free})
+        self.assertEqual(mfemur.constraints['Rz'].points, {0:fixed})
 
         force = mfemur.constraints['z'].points[0]
         self.assertTrue( isinstance(force, f.constraints.Force) )

@@ -37,17 +37,18 @@ class TestFEproblem(unittest.TestCase):
             self.assertTrue(isinstance(i, f.geometry.Element))
 
         desc = p.get_descendants()
-        # 2 Elements, 12 Nodes, 3 Materials (1 base), 1 AxisOrientation.
-        self.assertEqual(len(desc), 2 + 12 + 3 + 1)
+        # 2 Elements, 12 Nodes, 3 Materials (1 base), 1 AxisOrientation,
+        # 1 Constraint (free), 1 LoadCurve (loadcurve_zero).
+        self.assertEqual(len(desc), 2 + 12 + 3 + 1 + 1 + 1)
 
         desc_s = p.get_descendants_sorted()
         self.assertEqual(len(desc_s[f.geometry.Element]), 2)
         self.assertEqual(len(desc_s[f.geometry.Node]), 12)
         self.assertEqual(len(desc_s[f.materials.Material]), 3)
         self.assertEqual(len(desc_s[f.common.Constrainable]), 12)
-        self.assertEqual(len(desc_s[f.constraints.LoadCurve]), 0)
+        self.assertEqual(len(desc_s[f.constraints.LoadCurve]), 1)
         self.assertEqual(len(desc_s[f.common.Switch]), 0)
-        self.assertEqual(len(desc_s[None]), 1)
+        self.assertEqual(len(desc_s[None]), 2)
 
 
 

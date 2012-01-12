@@ -84,12 +84,16 @@ class Constraint(Base):
         return set([self.loadcurve])
 
 
-class Force(Constraint): pass
-class Displacement(Constraint): pass
-# FIXME: Single instance of Fixed (and Free?)
-class Fixed(Displacement):
-    def __init__(self):
-        Displacement.__init__(self, loadcurve_zero, 0)
+class Force(Constraint):
+    def __repr__(self):
+        return 'free' if self is free else Constraint.__repr__(self)
+class Displacement(Constraint):
+    def __repr__(self):
+        return 'fixed' if self is fixed else Constraint.__repr__(self)
+# Whenever possible, use these instances rather than creating new Force or
+# Displacement instances.  This will allow for more efficient solutions.
+free = Force(loadcurve_zero, 0)
+fixed = Displacement(loadcurve_zero, 0)
 
 
 class SwitchConstraint(Switch, Constraint):

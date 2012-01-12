@@ -1,3 +1,7 @@
+import febabel as f
+
+
+
 class Base(object):
     """The base class for all objects used in FEbabel.
 
@@ -40,13 +44,11 @@ class Constrainable(Base):
     __slots__ = ['constraints']
 
     def __init__(self, *degrees_of_freedom):
-        self.constraints = dict( (i,None) for i in degrees_of_freedom )
+        self.constraints = dict( (i,f.constraints.free) for i in degrees_of_freedom )
         # TODO: Prevent new DOFs from being added after the fact.
 
     def get_children(self):
-        s = set(self.constraints.itervalues())
-        s.discard(None)
-        return s
+        return set(self.constraints.itervalues())
 
 
 

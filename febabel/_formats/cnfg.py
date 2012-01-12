@@ -201,9 +201,9 @@ def read(self, filename):
             # Add the appropriate constraint at the current time for each DOF.
             for switch,constr in zip(switches, constr_string.split(SEPCHAR)):
                 if 'free' in constr:
-                    switch.points[step_start] = None
+                    switch.points[step_start] = con.free
                 elif 'fixed' in constr:
-                    switch.points[step_start] = con.Fixed()
+                    switch.points[step_start] = con.fixed
                 elif 'force' in constr:
                     _, lc, m = constr.split(SEPCHAR2)
                     switch.points[step_start] = con.Force(
