@@ -5,6 +5,7 @@ Supports .feb version 1.1.
 """
 
 from warnings import warn
+from itertools import chain
 
 from .. import geometry as geo, materials as mat, constraints as con, problem, common
 
@@ -246,6 +247,7 @@ def write(self, file_name_or_obj):
     e_force = etree.SubElement(e_boundary, 'force')
     # TODO: All boundary conditions related to surfaces (pressure, flux, etc.)
 
+    switched_nodes = set()
     for node,nid in node_ids.iteritems():
         for dof,constraint in node.constraints.iteritems():
             if constraint is con.free:
@@ -261,7 +263,7 @@ def write(self, file_name_or_obj):
                     'lc':loadcurve_ids[constraint.loadcurve]})
                 e.text = repr(constraint.multiplier)
             elif isinstance(constraint, con.SwitchConstraint):
-                pass # We'll deal with this farther down.
+                switched_nodes.add(node) # We'll deal with this farther down.
             else:
                 warn("Don't recognize constraint on node.")
 
@@ -276,6 +278,7 @@ def write(self, file_name_or_obj):
     # Apply constraints on rigid bodies.
     e_constraints = etree.SubElement(e_root, 'Constraints')
 
+    switched_rigid = set()
     for matl,mid in matl_ids.iteritems():
         if not isinstance(matl, common.Constrainable):
             continue
@@ -286,8 +289,10 @@ def write(self, file_name_or_obj):
 
             constraint = matl.constraints[dof]
 
-            if constraint is con.free or isinstance(
-                constraint, con.SwitchConstraint):
+            if constraint is con.free:
+                continue
+            elif isinstance(constraint, con.SwitchConstraint):
+                switched_rigid.add(matl) # We'll deal with this farther down.
                 continue
 
             e = etree.SubElement(e_rigid, tag)
@@ -317,10 +322,101 @@ def write(self, file_name_or_obj):
     e_root.append(e_loaddata)
 
 
-    # TODO: Steps
+    # Write out Steps.
+
+    # Parse all Switch objects to determine all the times at which they change
+    # state.  Iterate through all those time changes in order.
+    for time in sorted(set(chain(
+        *[s.points.iterkeys() for s in descendants[common.Switch]] ))):
+
+        e_step = etree.SubElement(e_root, 'Step')
+
+        # TODO: Control section.
+
+
+        # Boundary section for this step.
+        # (Mostly copy-pasted from global Boundary section.)
+        eS_boundary = etree.SubElement(e_step, 'Boundary')
+
+        eS_prescribe = etree.SubElement(eS_boundary, 'prescribe')
+        eS_fix = etree.SubElement(eS_boundary, 'fix')
+        eS_force = etree.SubElement(eS_boundary, 'force')
+
+        for node in switched_nodes:
+            nid = node_ids[node]
+            for dof,constraint in node.constraints.iteritems():
+                if not isinstance(constraint, con.SwitchConstraint):
+                    continue
+
+                active = constraint.get_active(time)
+                if active is con.free:
+                    pass
+                elif active is con.fixed:
+                    etree.SubElement(eS_fix, 'node', {'id':nid, 'bc':dof})
+                elif isinstance(active, con.Displacement):
+                    e = etree.SubElement(eS_prescribe, 'node', {'id':nid,
+                        'bc':dof, 'lc':loadcurve_ids[active.loadcurve]})
+                    e.text = repr(active.multiplier)
+                elif isinstance(active, con.Force):
+                    e = etree.SubElement(eS_force, 'node', {'id':nid,
+                        'bc':dof, 'lc':loadcurve_ids[active.loadcurve]})
+                    e.text = repr(active.multiplier)
+                else:
+                    warn("Don't recognize constraint in switch on node.")
+
+        # Remove any sections that aren't needed.
+        for e in (eS_prescribe, eS_fix, eS_force):
+            if len(e) == 0:
+                eS_boundary.remove(e)
+        if len(eS_boundary) == 0:
+            e_step.remove(eS_boundary)
+
+
+        # Constraints section for this step.
+        # (Mostly copy-pasted from global Constraints section.)
+        eS_constraints = etree.SubElement(e_step, 'Constraints')
+
+        for matl in switched_rigid:
+            mid = matl_ids[matl]
+            eS_rigid = etree.SubElement(eS_constraints, 'rigid_body', {'mat':mid})
+
+            for dof,tag in zip(('x','y','z','Rx','Ry','Rz'),
+                ('trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z') ):
+
+                constraint = matl.constraints[dof]
+                if not isinstance(constraint, con.SwitchConstraint):
+                    continue
+                active = constraint.get_active(time)
+                if active is con.free:
+                    continue
+
+                e = etree.SubElement(eS_rigid, tag)
+                if active is con.fixed:
+                    e.set('type', 'fixed')
+                elif isinstance(active, con.Displacement):
+                    e.set('type', 'prescribed')
+                    e.set('lc', loadcurve_ids[active.loadcurve])
+                    e.text = repr(active.multiplier)
+                elif isinstance(active, con.Force):
+                    e.set('type', 'force')
+                    e.set('lc', loadcurve_ids[active.loadcurve])
+                    e.text = repr(active.multiplier)
+                else:
+                    warn("Don't recognize constraint in switch on rigid body.")
+
+            # Remove rigid body constraints section if not needed.
+            if len(eS_rigid) == 0:
+                eS_constraints.remove(eS_rigid)
+
+        # Remove Constraints section if not needed.
+        if len(eS_constraints) == 0:
+            e_step.remove(eS_constraints)
+
 
 
     etree.ElementTree(e_root).write(file_name_or_obj, encoding='UTF-8')
+
+
 
 
 problem.FEproblem.write_feb = write

@@ -87,9 +87,11 @@ class TestFeb(unittest.TestCase):
         e1 = elements[1].get('mat')
         self.assertTrue( (e0=='1' and e1=='2') or (e1=='1' and e0=='2') )
 
-        # Confirm empty Boundary and Constraints elements have been removed.
+        # Confirm empty Boundary, Constraints, and Step elements have been
+        # removed.
         self.assertTrue(tree.find('Boundary') is None)
         self.assertTrue(tree.find('Constraints') is None)
+        self.assertTrue(tree.find('Step') is None)
 
 
 
@@ -211,9 +213,11 @@ class TestFeb(unittest.TestCase):
         for e in elemdat:
             self.assertEqual(e.find('fiber').text, '0.25,0.25,0.25')
 
-        # Confirm empty Boundary and Constraints elements have been removed.
+        # Confirm empty Boundary, Constraints, and Step elements have been
+        # removed.
         self.assertTrue(tree.find('Boundary') is None)
         self.assertTrue(tree.find('Constraints') is None)
+        self.assertTrue(tree.find('Step') is None)
 
 
 
@@ -231,6 +235,10 @@ class TestFeb(unittest.TestCase):
         nodes[2].constraints['y'] = con.Force(con.loadcurve_constant, 8.25)
         nodes[3].constraints['z'] = con.fixed
         mat.constraints['Rz'] = con.Force(lc, 122.2)
+        mat.constraints['x'] = con.SwitchConstraint(
+            {0: con.Displacement(con.loadcurve_ramp, -2.5),
+            1: con.Force(con.loadcurve_constant, -100)} )
+        nodes[1].constraints['z'] = con.SwitchConstraint({0.5: con.fixed})
 
         outfile = StringIO()
         p.write_feb(outfile)
@@ -288,6 +296,51 @@ class TestFeb(unittest.TestCase):
             self.assertEqual(pts[0].text, '0,0')
             self.assertEqual(pts[1].text, '1,0.75')
             self.assertEqual(pts[2].text, '2,1')
+
+        # Test steps.
+        steps = tree.findall('Step')
+        # TODO: Implement and check Control data, including start time.
+
+        self.assertTrue(steps[0].find('Boundary') is None)
+        rigid = steps[0].find('Constraints').findall('rigid_body')
+        self.assertEqual(len(rigid), 1)
+        self.assertEqual(rigid[0].get('mat'), '1') # Only one material.
+        self.assertEqual(len(rigid[0]), 1)
+        rx = rigid[0].find('trans_x')
+        self.assertEqual(rx.get('type'), 'prescribed')
+        self.assertEqual(rx.get('lc'), y.get('lc'))
+        self.assertEqual(rx.text, '-2.5')
+
+        self.assertEqual(len(steps[1].find('Boundary')), 1)
+        n = steps[1].find('Boundary').find('fix').findall('node')
+        self.assertEqual(len(n), 1)
+        self.assertEqual(n[0].get('id'), node_ids[1])
+        self.assertEqual(n[0].get('bc'), 'z')
+        # Rigid body should be same as previous step.
+        rigid = steps[1].find('Constraints').findall('rigid_body')
+        self.assertEqual(len(rigid), 1)
+        self.assertEqual(rigid[0].get('mat'), '1') # Only one material.
+        self.assertEqual(len(rigid[0]), 1)
+        rx = rigid[0].find('trans_x')
+        self.assertEqual(rx.get('type'), 'prescribed')
+        self.assertEqual(rx.get('lc'), y.get('lc'))
+        self.assertEqual(rx.text, '-2.5')
+
+        # Node should be same as previous step
+        self.assertEqual(len(steps[2].find('Boundary')), 1)
+        n = steps[2].find('Boundary').find('fix').findall('node')
+        self.assertEqual(len(n), 1)
+        self.assertEqual(n[0].get('id'), node_ids[1])
+        self.assertEqual(n[0].get('bc'), 'z')
+        # Rigid body is slightly different from previous step.
+        rigid = steps[2].find('Constraints').findall('rigid_body')
+        self.assertEqual(len(rigid), 1)
+        self.assertEqual(rigid[0].get('mat'), '1') # Only one material.
+        self.assertEqual(len(rigid[0]), 1)
+        rx = rigid[0].find('trans_x')
+        self.assertEqual(rx.get('type'), 'force')
+        self.assertEqual(rx.get('lc'), force[0].get('lc'))
+        self.assertEqual(rx.text, '-100')
 
 
 
