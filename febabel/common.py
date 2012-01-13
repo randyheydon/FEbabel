@@ -95,6 +95,8 @@ class Switch(Base):
 
     __slots__ = ['points']
 
+    default = None
+
     def __init__(self, points):
         self.points = points
 
@@ -114,10 +116,10 @@ class Switch(Base):
 
     def get_active(self, time):
         """Find which contained object is active at the specified time.
-        If the specified time is before the earliest specified time, None is
-        returned."""
+        If the specified time is before the earliest specified time, the
+        default object is returned."""
         # Iterate backwards through all given times to find the most recent.
         for t in sorted(self.points.iterkeys(), reverse=True):
             if t <= time:
                 return self.points[t]
-        return None
+        return self.default

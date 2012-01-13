@@ -98,7 +98,11 @@ fixed = Displacement(loadcurve_zero, 0)
 
 class SwitchConstraint(Switch, Constraint):
     """Acts as a container for Constraint objects that change with time, while
-    presenting itself as a Constraint object."""
+    presenting itself as a Constraint object.
+
+    Its default object, returned for get_active before the first set point, is
+    the free constraint."""
+    default = free
 
 
 

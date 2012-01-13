@@ -28,7 +28,7 @@ class TestSwitch(unittest.TestCase):
         f3 = con.Force(con.loadcurve_constant, 100)
         f4 = con.free
         s = con.SwitchConstraint({0:f1, 1:f2, 1.1:f3, 1.2:f4})
-        self.assertTrue( s.get_active(-0.2) is None )
+        self.assertTrue( s.get_active(-0.2) is con.free )
         self.assertTrue( s.get_active(0) is f1 )
         self.assertTrue( s.get_active(0.2) is f1 )
         self.assertTrue( s.get_active(0.999) is f1 )
