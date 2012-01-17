@@ -109,6 +109,10 @@ def read(self, filename):
     geo_default = '%s:'%geo_files[0] if len(geo_files)==1 else ''
 
 
+    # The string that precedes all objects created in the cnfg file.
+    filename_key = os.path.basename(filename)
+
+
     # Collect all nodes in the geometry source files.
     # FIXME: Go through all sets created by each geo file, not just allnodes?
     nodeset = set()
@@ -221,6 +225,22 @@ def read(self, filename):
         matl = materials[body]
         for dof,switch in zip( ('x','y','z','Rx','Ry','Rz'), switches ):
             matl.constraints[dof] = switch
+
+
+    # Create rigid interfaces.
+    rigid_int = set()
+    self.sets['%s:rigid_int' % filename_key] = rigid_int
+    for name,value in cp.items('rigid_int'):
+
+        # If value is set to False (or other equivalent value), ignore it.
+        try:
+            if not cp.getboolean('rigid_int', name):
+                continue
+        except ValueError: pass
+
+        nset, body = map(str.strip, value.split(SEPCHAR))
+        rigid_int.add(con.RigidInterface(
+            materials[body], self.sets[geo_default + nset] ))
 
 
     # TODO: Something with solver settings.

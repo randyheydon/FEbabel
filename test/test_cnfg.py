@@ -133,6 +133,22 @@ class TestCnfg(unittest.TestCase):
         self.assertEqual(lc.interpolation, f.constraints.LoadCurve.IN_LINEAR)
         self.assertEqual(lc.points, {0:0, 0.1:-10, 0.4:-500, 0.7:-1000, 1:-1500})
 
+        # Check that rigid interfaces have been created.
+        rigid_ints = list(p.sets['meniscectomy_kurosawa80.cnfg:rigid_int'])
+        self.assertEqual(len(rigid_ints), 4)
+        for i in rigid_ints:
+            self.assertTrue(isinstance(i, f.constraints.RigidInterface))
+        self.assertTrue(len([i for i in rigid_ints if i.rigid_body is mtibia]), 2)
+        self.assertTrue(len([i for i in rigid_ints if i.rigid_body is mfemur]), 2)
+        self.assertTrue(len([i for i in rigid_ints if
+                             i.nodes == p.sets['tf_joint.inp:f2fem']]), 1)
+        self.assertTrue(len([i for i in rigid_ints if
+                             i.nodes == p.sets['tf_joint.inp:tc2tib']]), 1)
+        self.assertTrue(len([i for i in rigid_ints if
+                             i.nodes == p.sets['tf_joint.inp:tiblig']]), 1)
+        self.assertTrue(len([i for i in rigid_ints if
+                             i.nodes == p.sets['tf_joint.inp:femlig']]), 1)
+
 
 
 
