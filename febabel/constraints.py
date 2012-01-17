@@ -130,7 +130,7 @@ class SlidingContact(Contact):
         self.friction_coefficient = friction_coefficient
         self.biphasic = biphasic
         self.solute = solute
-        Contact.__init__(master, slave, options)
+        Contact.__init__(self, master, slave, options)
 
 
 class TiedContact(Contact):

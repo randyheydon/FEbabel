@@ -229,9 +229,9 @@ def read(self, filename):
 
     # Create rigid interfaces.
     rigid_int = set()
-    self.sets['%s:rigid_int' % filename_key] = rigid_int
-    for name,value in cp.items('rigid_int'):
+    self.sets[SETSEP.join((filename_key, 'rigid_int'))] = rigid_int
 
+    for name,value in cp.items('rigid_int'):
         # If value is set to False (or other equivalent value), ignore it.
         try:
             if not cp.getboolean('rigid_int', name):
@@ -241,6 +241,36 @@ def read(self, filename):
         nset, body = map(str.strip, value.split(SEPCHAR))
         rigid_int.add(con.RigidInterface(
             materials[body], self.sets[geo_default + nset] ))
+
+
+    # Create contact interfaces.
+    contact = set()
+    self.sets[SETSEP.join((filename_key, 'contact'))] = contact
+    # Prepare contact settings.
+    contact_settings = dict(cp.items('contact_settings'))
+    if contact_settings['type'] == 'facet-to-facet sliding':
+        friction = 0; biphasic = False; solute = False
+    elif contact_settings['type'] == 'sliding2':
+        friction = 0; biphasic = True; solute = False
+    elif contact_settings['type'] == 'sliding3':
+        friction = 0; biphasic = True; solute = True
+    else:
+        warn('Do not recognize contact type "%s".  Assuming facet-to-facet.' %
+             contact_settings['type'])
+        friction = 0; biphasic = False; solute = False
+    del contact_settings['type']
+
+    for name,value in cp.items('contact'):
+        # If value is set to False (or other equivalent value), ignore it.
+        try:
+            if not cp.getboolean('contact', name):
+                continue
+        except ValueError: pass
+
+        master, slave = map(str.strip, value.split(SEPCHAR))
+        contact.add(con.SlidingContact(
+            self.sets[geo_default + master], self.sets[geo_default + slave],
+            friction, biphasic, solute, contact_settings ))
 
 
     # TODO: Something with solver settings.

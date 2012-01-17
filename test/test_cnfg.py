@@ -149,6 +149,22 @@ class TestCnfg(unittest.TestCase):
         self.assertTrue(len([i for i in rigid_ints if
                              i.nodes == p.sets['tf_joint.inp:femlig']]), 1)
 
+        # Check contact interfaces have been created.
+        contact = list(p.sets['meniscectomy_kurosawa80.cnfg:contact'])
+        self.assertEqual(len(contact), 3)
+        self.assertTrue(len([i for i in contact if
+                             i.master == p.sets['tf_joint.inp:fcsm']]), 1)
+        self.assertTrue(len([i for i in contact if
+                             i.master == p.sets['tf_joint.inp:fcsl']]), 1)
+        self.assertTrue(len([i for i in contact if
+                             i.master == p.sets['tf_joint.inp:aclsurf']]), 1)
+        self.assertTrue(len([i for i in contact if
+                             i.slave == p.sets['tf_joint.inp:tcsm']]), 1)
+        self.assertTrue(len([i for i in contact if
+                             i.slave == p.sets['tf_joint.inp:tcsl']]), 1)
+        self.assertTrue(len([i for i in contact if
+                             i.slave == p.sets['tf_joint.inp:pclsurf']]), 1)
+
 
 
 
