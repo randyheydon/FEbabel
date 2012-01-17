@@ -108,15 +108,47 @@ class SwitchConstraint(Switch, Constraint):
 
 
 class Contact(Base):
-    """Defines a contact interface between two surface sets."""
+    """Base class for a contact interface between two surface sets.
 
-    def __init__(self, master, slave):
-        self.master = master
-        self.slave = slave
+    master and slave are both iterables containing SurfaceElements."""
+
+    def __init__(self, master, slave, options=None):
+        self.master = set(master)
+        self.slave = set(slave)
+        self.options = options if options is not None else dict()
 
     def get_children(self):
-        # TODO, once API is settled here.
-        pass
+        return self.master.union(self.slave)
+
+
+class SlidingContact(Contact):
+    """Contact interface between two surfaces that can slide and separate."""
+    # TODO: Maybe break into separate friction, biphasic, and solute classes?
+
+    def __init__(self, master, slave, friction_coefficient=0, biphasic=False,
+                 solute=False, options=None):
+        self.friction_coefficient = friction_coefficient
+        self.biphasic = biphasic
+        self.solute = solute
+        Contact.__init__(master, slave, options)
+
+
+class TiedContact(Contact):
+    """Contact interface between two surfaces that cannot separate."""
+
+
+class RigidInterface(Contact):
+    """Contact interface between a set of nodes and the rigid body to which
+    they are affixed in relative location."""
+    def __init__(self, rigid_body, nodes):
+        self.rigid_body = rigid_body
+        self.nodes = set(nodes)
+
+    def get_children(self):
+        return self.nodes.union([self.rigid_body])
+
+
+# TODO: Rigid wall, rigid joint.
 
 
 class SwitchContact(Switch, Contact):
