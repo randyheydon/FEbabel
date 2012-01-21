@@ -150,5 +150,8 @@ class Surface4(SurfaceElement):
 
 
 class Spring(Element):
-    "2-node tension-only element."
+    "2-node linear spring element."
     n_nodes = 2
+    def __init__(self, nodes, material=None, tension_only=False):
+        self.tension_only = tension_only
+        Element.__init__(self, nodes, material)

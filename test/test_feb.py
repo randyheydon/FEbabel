@@ -37,6 +37,8 @@ class TestFeb(unittest.TestCase):
         p.sets[''] = set()
         p.sets[''].add(f.geometry.Hex8(nodes[0:8], matl1))
         p.sets[''].add(f.geometry.Hex8(nodes[4:12], matl2))
+        p.sets[''].add(f.geometry.Spring([nodes[0],nodes[10]],
+                       f.materials.LinearIsotropic(22, 0), tension_only=True))
 
         outfile = StringIO()
         p.write_feb(outfile)
@@ -87,9 +89,14 @@ class TestFeb(unittest.TestCase):
         e1 = elements[1].get('mat')
         self.assertTrue( (e0=='1' and e1=='2') or (e1=='1' and e0=='2') )
 
-        # Confirm empty Boundary, Constraints, and Step elements have been
-        # removed.
-        self.assertTrue(tree.find('Boundary') is None)
+        spring = tree.find('Boundary')
+        self.assertEqual(len(spring), 1)
+        self.assertEqual(spring[0].tag, 'spring')
+        self.assertEqual(spring[0].get('type'), 'tension-only linear')
+        self.assertEqual(len(spring[0]), 2)
+        self.assertEqual(spring[0].find('E').text, '22')
+
+        # Confirm empty Constraints and Step elements have been removed.
         self.assertTrue(tree.find('Constraints') is None)
         self.assertTrue(tree.find('Step') is None)
 

@@ -155,12 +155,21 @@ def write(self, file_name_or_obj):
     # Set of materials requiring per-element orientation data in ElementData.
     matl_user_orient = set()
 
+    # FIXME: These material removals could potentially break something if the
+    # material is used both as a TransIsoElastic base and directly in an
+    # element.  If that happens, a KeyError will probably result.
+    #
     # TransIsoElastic materials are not treated as wrappers in FEBio, so don't
     # add their base materials to FEBio's list.
     top_materials = set(descendants[mat.Material])
     for m in descendants[mat.Material]:
         if isinstance(m, mat.TransIsoElastic):
             top_materials.discard(m.base)
+    # Spring elements have a very different approach to materials, so don't
+    # add them to FEBio's list either.
+    for e in descendants[geo.Element]:
+        if isinstance(e, geo.Spring):
+            top_materials.discard(e.material)
 
     for i,m in enumerate(top_materials):
         mid = str(i+1)
@@ -320,6 +329,21 @@ def write(self, file_name_or_obj):
                 e = etree.SubElement(e_slave, elem._name_feb,
                                      {'id': str(i+1)})
                 e.text = ','.join(node_ids[n] for n in iter(elem))
+
+
+    # Create spring elements.
+    for e in descendants[geo.Element] :
+        if not isinstance(e, geo.Spring):
+            continue
+        # TODO: Support for nonlinear springs.
+        e_spring = etree.SubElement(e_boundary, 'spring',
+            {'type': 'tension-only linear' if e.tension_only else 'linear'})
+        e_node = etree.SubElement(e_spring, 'node')
+        e_node.text = ','.join(node_ids[n] for n in iter(e))
+        if not isinstance(e.material, mat.LinearIsotropic):
+            warn('Support for nonlinear springs is not yet implemented.')
+        e_E = etree.SubElement(e_spring, 'E')
+        e_E.text = repr(e.material.E)
 
 
     # Remove any sections that aren't needed.
