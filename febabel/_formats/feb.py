@@ -231,6 +231,8 @@ def write(self, file_name_or_obj):
             # throughout shell.
             e_thick = etree.SubElement(e_elem, 'thickness')
             e_thick.text = ','.join( [str(e.thickness)]*len(e) )
+    if len(e_elemdata) == 0:
+        e_geometry.remove(e_elemdata)
 
 
     # Loadcurves must be processed before constraints, but the LoadData element

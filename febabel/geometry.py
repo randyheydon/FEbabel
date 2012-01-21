@@ -15,7 +15,7 @@ class Node(Constrainable):
         NOTE: This will not protect you from yourself!  Insert *only* valid
         data (length 3 sequence of ints/floats), or the result will be
         undefined!"""
-        Constrainable.__init__(self, 'x','y','z','p')
+        Constrainable.__init__(self, 'x','y','z')
         p = iter(pos)
         self._pos = [p.next(), p.next(), p.next()]
 
