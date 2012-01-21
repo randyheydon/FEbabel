@@ -16,7 +16,7 @@ else:
     cp_kwargs = {}
 
 
-from .. import problem, materials as mat, constraints as con
+from .. import problem, geometry as geo, materials as mat, constraints as con
 from ._common import SETSEP, NSET, ESET
 
 SEPCHAR = ','
@@ -273,9 +273,37 @@ def read(self, filename):
             friction, biphasic, solute, contact_settings ))
 
 
+    # Create spring elements.
+    for name,value in cp.items('springs'):
+        # If value is set to False (or other equivalent value), ignore it.
+        try:
+            if not cp.getboolean('springs', name):
+                continue
+        except ValueError: pass
+
+        values = map(str.strip, value.split(SEPCHAR))
+        nset = self.sets[geo_default + values[0]]
+        # Find given numbered node in the "allnodes" set of the given geometry
+        # file.  If no geometry file is given (ie: there's only one), search
+        # the geo_default allnodes set.
+        if SETSEP in values[1]:
+            node_source, node_number = values[1].split(SETSEP)
+            allnodes = SETSEP.join((node_source, NSET))
+        else:
+            node_number = values[1]
+            allnodes = geo_default + NSET
+        node = self.sets[allnodes][node_number]
+        stiffness = float(values[2]) / len(nset)
+        area = float(values[3])
+
+        springs = set(
+            geo.Spring([node, n],
+                mat.LinearIsotropic(area * stiffness/node.distance_to(n), 0))
+            for n in nset )
+        self.sets[SETSEP.join((filename_key, name))] = springs
+
+
     # TODO: Something with solver settings.
-    # TODO: Figure out contact.
-    # TODO: Generate springs.
 
 
 problem.FEproblem.read_cnfg = read

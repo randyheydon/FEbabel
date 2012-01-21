@@ -1,3 +1,4 @@
+from math import sqrt
 from .common import Base, Constrainable
 
 class Node(Constrainable):
@@ -53,6 +54,10 @@ class Node(Constrainable):
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self._pos))
+
+    def distance_to(self, node):
+        "Returns Euclidean distance between this node and a given one."
+        return sqrt(sum( (i-j)**2 for i,j in zip(self, node) ))
 
 
 
