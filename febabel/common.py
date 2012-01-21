@@ -49,6 +49,7 @@ class Base(object):
             feb.geometry.Element: set(),
             feb.materials.Material: set(),
             feb.constraints.LoadCurve: set(),
+            feb.constraints.Contact: set(),
             Constrainable: set(),
             Switch: set(),
             None: set()

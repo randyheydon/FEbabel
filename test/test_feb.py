@@ -299,6 +299,7 @@ class TestFeb(unittest.TestCase):
 
         # Test steps.
         steps = tree.findall('Step')
+        self.assertEqual(len(steps), 3)
         # TODO: Implement and check Control data, including start time.
 
         self.assertTrue(steps[0].find('Boundary') is None)
@@ -341,6 +342,86 @@ class TestFeb(unittest.TestCase):
         self.assertEqual(rx.get('type'), 'force')
         self.assertEqual(rx.get('lc'), force[0].get('lc'))
         self.assertEqual(rx.text, '-100')
+
+
+
+    def test_write_feb_contact(self):
+        p = f.problem.FEproblem()
+
+        Node = f.geometry.Node
+        Surf = f.geometry.Surface3
+        master = [ Surf(( Node((0,0,0)), Node((1,0,0)), Node((0,1,0)) )) ]
+        slave = [ Surf(( Node((0,0,1)), Node((1,0,1)), Node((0,1,1)) )) ]
+        p.sets[''] = set([
+            f.constraints.SlidingContact(master, slave,
+                options={'two_pass':'1', 'auto_penalty':'1', 'laugon':'1'}),
+            f.constraints.RigidInterface(
+                f.materials.Rigid((0,0,0)), [master[0][0]] ),
+            f.constraints.RigidInterface(
+                f.materials.Rigid((0,0,1)), [slave[0][0]] ),
+            f.constraints.SwitchContact(
+                {0: None, 0.5: f.constraints.TiedContact(master, slave)}) ])
+
+        outfile = StringIO()
+        p.write_feb(outfile)
+        tree = etree.fromstring(outfile.getvalue())
+
+        self.assertEqual(len(tree.find('Material')), 2)
+        self.assertEqual(len(tree.find('Geometry').find('Nodes')), 6)
+
+        self.assertEqual(len(tree.find('Boundary')), 3)
+        contact = tree.find('Boundary').findall('contact')
+        self.assertEqual(len(contact), 3)
+
+        sliding = [c for c in contact if
+                   c.get('type') == 'facet-to-facet sliding']
+        self.assertEqual(len(sliding), 1)
+        self.assertEqual(sliding[0].find('two_pass').text, '1')
+        self.assertEqual(sliding[0].find('auto_penalty').text, '1')
+        self.assertEqual(sliding[0].find('laugon').text, '1')
+        m, s = sliding[0].findall('surface')
+        self.assertEqual(m.get('type'), 'master')
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m[0].tag, 'tri3')
+        self.assertEqual(len(m[0].text.split(',')), 3)
+        # TODO: Test node assignment.
+        self.assertEqual(s.get('type'), 'slave')
+        self.assertEqual(len(s), 1)
+        self.assertEqual(s[0].tag, 'tri3')
+        self.assertEqual(len(s[0].text.split(',')), 3)
+        for n in m[0].text.split(','):
+            self.assertTrue(n not in s[0].text.split(','))
+        # TODO: Test node assignment.
+
+        rigid = [c for c in contact if c.get('type') == 'rigid']
+        self.assertEqual(len(rigid), 2)
+        for r in rigid:
+            self.assertEqual(len(r), 1)
+            self.assertEqual(r[0].tag, 'node')
+        self.assertTrue( rigid[0][0].get('rb') != rigid[1][0].get('rb') )
+        self.assertTrue( rigid[0][0].get('id') != rigid[1][0].get('id') )
+        # TODO: Test material matches node.
+
+        steps = tree.findall('Step')
+        self.assertEqual(len(steps), 2)
+        self.assertEqual(steps[0].find('Boundary'), None)
+        c = steps[1].find('Boundary')
+        self.assertEqual(len(c), 1)
+        self.assertEqual(c[0].tag, 'contact')
+        self.assertEqual(c[0].get('type'), 'tied')
+        m, s = c[0].findall('surface')
+        self.assertEqual(m.get('type'), 'master')
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m[0].tag, 'tri3')
+        self.assertEqual(len(m[0].text.split(',')), 3)
+        # TODO: Test node assignment.
+        self.assertEqual(s.get('type'), 'slave')
+        self.assertEqual(len(s), 1)
+        self.assertEqual(s[0].tag, 'tri3')
+        self.assertEqual(len(s[0].text.split(',')), 3)
+        for n in m[0].text.split(','):
+            self.assertTrue(n not in s[0].text.split(','))
+        # TODO: Test node assignment.
 
 
 

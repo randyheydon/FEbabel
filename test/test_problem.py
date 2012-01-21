@@ -45,8 +45,9 @@ class TestFEproblem(unittest.TestCase):
         self.assertEqual(len(desc_s[f.geometry.Element]), 2)
         self.assertEqual(len(desc_s[f.geometry.Node]), 12)
         self.assertEqual(len(desc_s[f.materials.Material]), 3)
-        self.assertEqual(len(desc_s[f.common.Constrainable]), 12)
         self.assertEqual(len(desc_s[f.constraints.LoadCurve]), 1)
+        self.assertEqual(len(desc_s[f.constraints.Contact]), 0)
+        self.assertEqual(len(desc_s[f.common.Constrainable]), 12)
         self.assertEqual(len(desc_s[f.common.Switch]), 0)
         self.assertEqual(len(desc_s[None]), 2)
 

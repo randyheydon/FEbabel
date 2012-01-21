@@ -17,7 +17,9 @@ geo.Pent6._name_feb = 'pent6'
 geo.Hex8._name_feb = 'hex8'
 geo.Shell3._name_feb = 'tri3'
 geo.Shell4._name_feb = 'quad4'
-# Spring and surface elements are handled differently, so not included.
+geo.Surface3._name_feb = 'tri3'
+geo.Surface4._name_feb = 'quad4'
+# Spring elements are handled differently, so not included.
 
 mat.LinearIsotropic._name_feb = 'isotropic elastic'
 mat.NeoHookean._name_feb = 'neo-Hookean'
@@ -34,6 +36,20 @@ mat.TransIsoElastic._name_feb = property(
     lambda self: 'trans iso %s' % self.base._name_feb )
 mat.LinearOrthotropic._name_feb = 'linear orthotropic'
 mat.FungOrthotropic._name_feb = 'Fung orthotropic'
+
+def _name_feb_SlidingContact(self):
+    # TODO: Warnings or errors if options can't be used together.
+    if self.solute:
+        return 'sliding3'
+    elif self.biphasic:
+        return 'sliding2'
+    elif self.friction_coefficient:
+        return 'sliding_with_gaps'
+    else:
+        return 'facet-to-facet sliding'
+con.SlidingContact._name_feb = property(_name_feb_SlidingContact)
+con.TiedContact._name_feb = 'tied'
+con.RigidInterface._name_feb = 'rigid'
 
 loadcurve_interp_map = {
     con.LoadCurve.IN_LINEAR: 'linear',
@@ -239,9 +255,9 @@ def write(self, file_name_or_obj):
             e_loadpoint.text = '%s,%s' % (time, lc.points[time])
 
 
-    # Apply constraints on nodes.
     e_boundary = etree.SubElement(e_root, 'Boundary')
 
+    # Apply constraints on nodes.
     e_prescribe = etree.SubElement(e_boundary, 'prescribe')
     e_fix = etree.SubElement(e_boundary, 'fix')
     e_force = etree.SubElement(e_boundary, 'force')
@@ -266,6 +282,43 @@ def write(self, file_name_or_obj):
                 switched_nodes.add(node) # We'll deal with this farther down.
             else:
                 warn("Don't recognize constraint on node.")
+
+
+    # Separate switched contact interfaces from global ones.
+    switched_contact = descendants[con.Contact] & descendants[common.Switch]
+    global_contact = descendants[con.Contact] - switched_contact
+    for s in switched_contact:
+        for c in s.points.itervalues():
+            global_contact.discard(c)
+
+    # Apply global contact interfaces.
+    for contact in global_contact:
+        e_contact = etree.SubElement(e_boundary, 'contact',
+                                     {'type': contact._name_feb})
+        if isinstance(contact, con.RigidInterface):
+            mid = matl_ids[contact.rigid_body]
+            for node in contact.nodes:
+                etree.SubElement(e_contact, 'node',
+                                 {'id': node_ids[node], 'rb': mid})
+        else:
+            # Apply solution-specific options.
+            for opt,val in contact.options.iteritems():
+                e = etree.SubElement(e_contact, opt)
+                e.text = val
+
+            # Define both contact surfaces.
+            e_master = etree.SubElement(e_contact, 'surface',{'type':'master'})
+            for i,elem in enumerate(contact.master):
+                e = etree.SubElement(e_master, elem._name_feb,
+                                     {'id': str(i+1)})
+                e.text = ','.join(node_ids[n] for n in iter(elem))
+
+            e_slave = etree.SubElement(e_contact, 'surface', {'type': 'slave'})
+            for i,elem in enumerate(contact.slave):
+                e = etree.SubElement(e_slave, elem._name_feb,
+                                     {'id': str(i+1)})
+                e.text = ','.join(node_ids[n] for n in iter(elem))
+
 
     # Remove any sections that aren't needed.
     for e in (e_prescribe, e_fix, e_force):
@@ -327,7 +380,7 @@ def write(self, file_name_or_obj):
     # Parse all Switch objects to determine all the times at which they change
     # state.  Iterate through all those time changes in order.
     for time in sorted(set(chain(
-        *[s.points.iterkeys() for s in descendants[common.Switch]] ))):
+            *[s.points.iterkeys() for s in descendants[common.Switch]] ))):
 
         e_step = etree.SubElement(e_root, 'Step')
 
@@ -363,6 +416,38 @@ def write(self, file_name_or_obj):
                     e.text = repr(active.multiplier)
                 else:
                     warn("Don't recognize constraint in switch on node.")
+
+
+        for contact in switched_contact:
+            active = contact.get_active(time)
+            if active is None:
+                continue
+            e_contact = etree.SubElement(eS_boundary, 'contact',
+                                         {'type': active._name_feb})
+            if isinstance(active, con.RigidInterface):
+                mid = matl_ids[active.rigid_body]
+                for node in active.nodes:
+                    etree.SubElement(e_contact, 'node',
+                                     {'id': node_ids[node], 'rb': mid})
+            else:
+                # Apply solution-specific options.
+                for opt,val in active.options.iteritems():
+                    e = etree.SubElement(e_contact, opt)
+                    e.text = val
+
+                # Define both contact surfaces.
+                e_master = etree.SubElement(e_contact, 'surface',{'type':'master'})
+                for i,elem in enumerate(active.master):
+                    e = etree.SubElement(e_master, elem._name_feb,
+                                         {'id': str(i+1)})
+                    e.text = ','.join(node_ids[n] for n in iter(elem))
+
+                e_slave = etree.SubElement(e_contact, 'surface', {'type': 'slave'})
+                for i,elem in enumerate(active.slave):
+                    e = etree.SubElement(e_slave, elem._name_feb,
+                                         {'id': str(i+1)})
+                    e.text = ','.join(node_ids[n] for n in iter(elem))
+
 
         # Remove any sections that aren't needed.
         for e in (eS_prescribe, eS_fix, eS_force):
