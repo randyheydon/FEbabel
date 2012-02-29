@@ -30,16 +30,18 @@ class TestFEproblem(unittest.TestCase):
             f.geometry.Hex8(nodes[4:12], matl2) ))
         # TODO: Add in some constraints.
 
-        # Test descendants are found correctly.
+        # Test descendants are found correctly: two elements, one timestepper.
         children = p.get_children()
-        self.assertEqual(len(children), 2)
-        for i in children:
-            self.assertTrue(isinstance(i, f.geometry.Element))
+        self.assertEqual(len(children), 3)
+        self.assertEqual(len([i for i in children if
+                         isinstance(i, f.geometry.Element)]), 2)
+        self.assertEqual(len([i for i in children if
+                         isinstance(i, f.problem.TimeStepper)]), 1)
 
         desc = p.get_descendants()
         # 2 Elements, 12 Nodes, 3 Materials (1 base), 1 AxisOrientation,
-        # 1 Constraint (free), 1 LoadCurve (loadcurve_zero).
-        self.assertEqual(len(desc), 2 + 12 + 3 + 1 + 1 + 1)
+        # 1 Constraint (free), 1 LoadCurve (loadcurve_zero), 1 TimeStepper.
+        self.assertEqual(len(desc), 2 + 12 + 3 + 1 + 1 + 1 + 1)
 
         desc_s = p.get_descendants_sorted()
         self.assertEqual(len(desc_s[f.geometry.Element]), 2)
@@ -49,7 +51,7 @@ class TestFEproblem(unittest.TestCase):
         self.assertEqual(len(desc_s[f.constraints.Contact]), 0)
         self.assertEqual(len(desc_s[f.common.Constrainable]), 12)
         self.assertEqual(len(desc_s[f.common.Switch]), 0)
-        self.assertEqual(len(desc_s[None]), 2)
+        self.assertEqual(len(desc_s[None]), 3)
 
 
 
