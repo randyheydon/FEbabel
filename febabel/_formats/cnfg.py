@@ -303,6 +303,19 @@ def read(self, filename):
         self.sets[SETSEP.join((filename_key, name))] = springs
 
 
+    # Set time controls.
+    time_steps = float(cp.get('solver', 'time_steps'))
+    step_size = float(cp.get('solver', 'step_size'))
+    dtmax = cp.get('solver', 'dtmax')
+    if dtmax.startswith('lc='):
+        max_step = loadcurves[ dtmax.split('"')[1] ]
+    else:
+        max_step = float(dtmax)
+    self.timestepper = problem.TimeStepper(
+        duration=time_steps*step_size, step_size=step_size,
+        min_step=float(cp.get('solver', 'dtmin')), max_step=max_step )
+
+
     # TODO: Something with solver settings.
 
 

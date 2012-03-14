@@ -176,6 +176,13 @@ class TestCnfg(unittest.TestCase):
         self.assertEqual(len(
             p.sets['meniscectomy_kurosawa80.cnfg:medpost_horn'] ), 88)
 
+        # Check that time controls have been applied.
+        self.assertEqual(p.timestepper.duration, 1.0)
+        self.assertEqual(p.timestepper.step_size, 0.1)
+        self.assertEqual(p.timestepper.min_step, 0.001)
+        self.assertTrue(isinstance(p.timestepper.max_step,
+                                   f.constraints.LoadCurve))
+
 
 
 
